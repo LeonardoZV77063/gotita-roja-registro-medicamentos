@@ -451,5 +451,5 @@ código, la instalación o el mantenimiento:
 |:-:|---|---|
 | 1 | Julián A. Cruz Justiniano | hooasoiio@gmail.com |
 | 2 | Nombre y apellido | correo@ejemplo.com |
-| 3 | Nombre y apellido | correo@ejemplo.com |
+| 3 | Yimy Serrano Palacios | yimysp@gmail.com |
 | 4 | Josue Mujica Cachicatari | josuelegion1@gmail.com |
