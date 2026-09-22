@@ -1,0 +1,191 @@
+@model TableroViewModel
+@{
+    ViewData["Title"] = "Inicio";
+    var urlCompartir = ViewBag.UrlCompartir as string;
+    var redLocalSinTls = ViewBag.RedLocalSinTls as bool? == true;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Buen día, @User.NombreCompleto().Split(' ')[0]</h1>
+        <p class="text-muted mb-0">
+            Resumen de @Model.NombreMes de @DateTime.Today.Year
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (urlCompartir is not null)
+        {
+            <button class="btn btn-outline-secondary btn-lg" onclick="generarEnlaceColaborador()">
+                Compartir en red
+            </button>
+        }
+        <a class="btn btn-principal btn-lg" asp-controller="Pacientes" asp-action="Index">
+            Atender a un paciente
+        </a>
+    </div>
+</div>
+
+@if (urlCompartir is not null)
+{
+    <div id="contenedorEnlace" class="alert alert-secondary border mb-4" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Trabajo colaborativo (Wi-Fi)</h5>
+            <button type="button" class="btn-close" aria-label="Cerrar"
+                    onclick="document.getElementById('contenedorEnlace').style.display='none'"></button>
+        </div>
+        <p class="mb-2">Para usar el software en otra máquina, ambos equipos deben estar en la misma red Wi-Fi. Escriba esta dirección en el navegador web del otro dispositivo:</p>
+        @if (redLocalSinTls)
+        {
+            <p class="small mb-2">
+                Use este enlace únicamente en la red privada de la institución.
+            </p>
+        }
+        <div class="input-group">
+            <input type="text" id="inputEnlace" class="form-control fw-bold text-primary" readonly>
+            <button class="btn btn-outline-primary" type="button" onclick="copiarEnlace()">
+                Copiar enlace
+            </button>
+        </div>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Entregas del mes</div>
+            <div class="cifra">@Model.AtencionesDelMes</div>
+            <div class="detalle">@Model.AtencionesDelAnio en lo que va del año</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Donado en el mes</div>
+            <div class="cifra">@Model.MontoDelMes.ToString("N0") <small class="fs-6">Bs</small></div>
+            <div class="detalle">@Model.MontoDelAnio.ToString("N2") Bs en el año</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Pacientes registrados</div>
+            <div class="cifra">@Model.PacientesRegistrados</div>
+            <div class="detalle">@Model.PacientesNuevosDelMes nuevos este mes</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Valor del inventario</div>
+            <div class="cifra">@Model.ValorInventario.ToString("N0") <small class="fs-6">Bs</small></div>
+            <div class="detalle">@Model.MedicamentosConStock medicamentos con stock</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Últimas entregas</span>
+                <a class="btn btn-sm btn-outline-principal"
+                   asp-controller="Atenciones" asp-action="Index">Ver todas</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.UltimasAtenciones.Count == 0)
+                {
+                    <p class="text-muted p-4 mb-0">
+                        Todavía no hay entregas registradas. Empiece buscando al paciente
+                        por su carnet de identidad.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table tabla-compacta mb-0">
+                            <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Formulario</th>
+                                <th>Paciente</th>
+                                <th>Medicamentos</th>
+                                <th class="numero">Monto</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var atencion in Model.UltimasAtenciones)
+                            {
+                                <tr>
+                                    <td>@atencion.FechaAtencion.ToString("dd/MM/yy")</td>
+                                    <td>
+                                        <a asp-controller="Atenciones" asp-action="Detalle"
+                                           asp-route-id="@atencion.IdAtencion">
+                                            @atencion.NumeroFormulario
+                                        </a>
+                                    </td>
+                                    <td>@atencion.Paciente?.NombreCompleto</td>
+                                    <td class="small">
+                                        @string.Join(", ",
+                                            atencion.Detalles.Select(d => d.Medicamento?.Nombre))
+                                    </td>
+                                    <td class="numero">@atencion.MontoTotal.ToString("N2")</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">Vencimientos próximos</div>
+            <div class="card-body">
+                @if (Model.LotesPorVencer.Count == 0)
+                {
+                    <p class="text-muted mb-0">
+                        Ningún lote vence en los próximos 90 días.
+                    </p>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var lote in Model.LotesPorVencer)
+                        {
+                            var vencido = lote.Vencido;
+                            <li class="mb-2 pb-2 border-bottom">
+                                <div class="fw-semibold">@lote.Medicamento?.Nombre</div>
+                                <div class="small @(vencido ? "text-danger" : "text-muted")">
+                                    @lote.CantidadDisponible.ToString("0.##") unidades ·
+                                    @(vencido ? "venció" : "vence")
+                                    el @lote.FechaVencimiento?.ToString("dd/MM/yyyy")
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+@if (urlCompartir is not null)
+{
+<script>
+function generarEnlaceColaborador() {
+    const input = document.getElementById('inputEnlace');
+    input.value = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(urlCompartir));
+    document.getElementById('contenedorEnlace').style.display = 'block';
+}
+
+async function copiarEnlace() {
+    const input = document.getElementById('inputEnlace');
+    try {
+        await navigator.clipboard.writeText(input.value);
+    } catch {
+        input.select();
+        document.execCommand('copy');
+    }
+}
+</script>
+}
+}

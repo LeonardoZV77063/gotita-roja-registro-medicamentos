@@ -1,0 +1,29 @@
+@model PacienteFormViewModel
+@{
+    ViewData["Title"] = "Registrar paciente";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Registrar paciente</h1>
+    <p class="text-muted mb-0">
+        Estos datos se cargan una sola vez. Cada entrega posterior se agrega a
+        esta misma ficha.
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Crear" method="post" enctype="multipart/form-data">
+            <partial name="_Formulario" model="Model" />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-principal">Registrar paciente</button>
+                <a class="btn btn-link" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

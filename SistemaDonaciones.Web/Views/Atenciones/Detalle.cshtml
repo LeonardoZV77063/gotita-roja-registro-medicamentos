@@ -1,0 +1,189 @@
+@model Atencion
+@{
+    ViewData["Title"] = $"Entrega {Model.NumeroFormulario}";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">
+            Entrega @Model.NumeroFormulario
+            @if (Model.EstaAnulada)
+            {
+                <span class="badge bg-danger align-middle ms-2">Anulada</span>
+            }
+        </h1>
+        <p class="text-muted mb-0">
+            @Model.FechaAtencion.ToString("dddd d 'de' MMMM 'de' yyyy") ·
+            registrada por @Model.UsuarioRegistro?.NombreCompleto
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-principal" asp-action="Comprobante"
+           asp-route-id="@Model.IdAtencion" target="_blank">Imprimir comprobante</a>
+        @* El controlador también exige Administrador; ocultar la acción evita
+           una navegación que terminaría en «Sin permiso». *@
+        @if (!Model.EstaAnulada && User.EsAdministrador())
+        {
+            <a class="btn btn-outline-danger" asp-action="Anular" asp-route-id="@Model.IdAtencion">
+                Anular
+            </a>
+        }
+    </div>
+</div>
+
+@if (Model.EstaAnulada)
+{
+    <div class="alert alert-warning">
+        <strong>Entrega anulada.</strong>
+        @Model.MotivoAnulacion
+        <div class="small mt-1">
+            El registro se conserva: el respaldo para auditoría no admite borrados.
+        </div>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">Datos de la atención</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Paciente</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Pacientes" asp-action="Ficha"
+                           asp-route-id="@Model.IdPaciente">
+                            @Model.Paciente?.NombreCompleto
+                        </a>
+                        <div class="small text-muted">
+                            Carnet @Model.Paciente?.DocumentoCompleto ·
+                            @Model.Paciente?.Edad años ·
+                            @Model.Paciente?.Sexo?.Descripcion
+                        </div>
+                    </dd>
+
+                    <dt class="col-sm-4">Diagnóstico</dt>
+                    <dd class="col-sm-8">@Model.Diagnostico?.Descripcion</dd>
+
+                    <dt class="col-sm-4">Condición</dt>
+                    <dd class="col-sm-8">@Model.Condicion?.Descripcion</dd>
+
+                    <dt class="col-sm-4">Establecimiento</dt>
+                    <dd class="col-sm-8">@(Model.Establecimiento?.Nombre ?? "—")</dd>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+                    {
+                        <dt class="col-sm-4">Observaciones</dt>
+                        <dd class="col-sm-8">@Model.Observaciones</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Medicamentos entregados</div>
+            <div class="table-responsive">
+                <table class="table tabla-compacta mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th>Medicamento</th>
+                        <th class="numero">Cantidad</th>
+                        <th>Costeo</th>
+                        <th class="numero">Monto (Bs)</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var d in Model.Detalles)
+                    {
+                        <tr>
+                            <td>
+                                @d.Medicamento?.Nombre
+                                @if (d.Medicamento?.UnidadMedida is not null)
+                                {
+                                    <span class="text-muted small">
+                                        (@d.Medicamento.UnidadMedida.Abreviatura)
+                                    </span>
+                                }
+                            </td>
+                            <td class="numero">@d.Cantidad.ToString("0.##")</td>
+                            <td>
+                                @if (d.CosteadoPorInventario)
+                                {
+                                    <span class="badge insignia-fifo">FIFO</span>
+                                }
+                                else
+                                {
+                                    <span class="badge insignia-manual">Manual</span>
+                                }
+                            </td>
+                            <td class="numero">@d.MontoTotal.ToString("N2")</td>
+                        </tr>
+
+                        @if (d.Consumos.Count > 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="ps-4 small text-muted">
+                                    Salió de estos lotes:
+                                    @foreach (var c in d.Consumos.OrderBy(x => x.Lote?.FechaIngreso))
+                                    {
+                                        <span class="me-3">
+                                            @c.Cantidad.ToString("0.##") ×
+                                            @c.CostoUnitario.ToString("N2") Bs
+                                            (ingreso @c.Lote?.FechaIngreso.ToString("dd/MM/yyyy"))
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                    <tfoot>
+                    <tr class="fw-semibold">
+                        <td colspan="3" class="text-end">Total donado</td>
+                        <td class="numero">@Model.MontoTotal.ToString("N2")</td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Receta escaneada</div>
+            <div class="card-body text-center">
+                @if (Model.ArchivoReceta is null)
+                {
+                    <p class="text-muted mb-0">No se encuentra el archivo.</p>
+                }
+                else if (Model.ArchivoReceta.EsPdf)
+                {
+                    <a class="btn btn-outline-principal"
+                       asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.IdArchivoReceta" target="_blank">
+                        Abrir receta (PDF)
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.IdArchivoReceta" target="_blank">
+                        <img class="miniatura-documento"
+                             src="@Url.Action("Ver", "Archivos", new { id = Model.IdArchivoReceta })"
+                             alt="Receta escaneada" />
+                    </a>
+                }
+
+                @if (Model.ArchivoReceta is not null)
+                {
+                    <div class="small text-muted mt-2">
+                        @Model.ArchivoReceta.NombreOriginal ·
+                        @Model.ArchivoReceta.TamanoLegible
+                    </div>
+                    <a class="btn btn-sm btn-link"
+                       asp-controller="Archivos" asp-action="Descargar"
+                       asp-route-id="@Model.IdArchivoReceta">Descargar</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

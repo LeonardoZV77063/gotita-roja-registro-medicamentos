@@ -1,0 +1,137 @@
+@model InventarioViewModel
+@{
+    ViewData["Title"] = "Existencias";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">Existencias</h1>
+        <p class="text-muted mb-0">
+            @Model.MedicamentosConStock medicamento(s) con stock ·
+            valor total @Model.ValorTotalInventario.ToString("N2") Bs
+        </p>
+    </div>
+    <a class="btn btn-principal" asp-action="Ingresar">Registrar ingreso</a>
+</div>
+
+@if (Model.LotesPorVencer.Count > 0)
+{
+    <div class="alert alert-warning">
+        <strong>Atención:</strong> @Model.LotesPorVencer.Count lote(s) vencen en los
+        próximos 90 días.
+        <ul class="mb-0 mt-1 small">
+            @foreach (var l in Model.LotesPorVencer.Take(5))
+            {
+                <li>
+                    @l.Medicamento?.Nombre —
+                    @l.CantidadDisponible.ToString("0.##") unidades,
+                    vence el @l.FechaVencimiento?.ToString("dd/MM/yyyy")
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label asp-for="Criterio" class="form-label"></label>
+                <input asp-for="Criterio" class="form-control" maxlength="80" autocomplete="off" />
+            </div>
+            <div class="col-md-3">
+                <div class="form-check mb-2">
+                    <input asp-for="SoloConStock" class="form-check-input" />
+                    <label asp-for="SoloConStock" class="form-check-label small"></label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-outline-principal w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>Medicamento</th>
+                <th class="numero">Unidades</th>
+                <th class="numero">Valor (Bs)</th>
+                <th>Próximo vencimiento</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Existencias.Count == 0)
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        @if (Model.CriterioInvalido)
+                        {
+                            <text>La búsqueda no contiene letras ni números que se puedan buscar.</text>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(Model.Criterio))
+                        {
+                            <text>Ningún medicamento coincide con «@Model.Criterio»@(Model.SoloConStock ? " entre los que tienen stock" : "").</text>
+                            @if (Model.SoloConStock)
+                            {
+                                <div class="small mt-1">Desmarque «Sólo con stock» para buscar también los agotados.</div>
+                            }
+                        }
+                        else if (Model.SoloConStock && Model.HayMedicamentosRegistrados)
+                        {
+                            <text>No hay medicamentos con stock disponible.</text>
+                            <div class="small mt-1">Desmarque «Sólo con stock» para ver también los agotados.</div>
+                        }
+                        else
+                        {
+                            <text>Todavía no hay medicamentos en el inventario. Registre un ingreso para empezar.</text>
+                        }
+                    </td>
+                </tr>
+            }
+            @foreach (var e in Model.Existencias)
+            {
+                <tr>
+                    <td class="fw-semibold">
+                        @e.Nombre
+                        @if (e.UnidadesEnStock <= 0)
+                        {
+                            <span class="badge bg-secondary ms-1">Agotado</span>
+                        }
+                    </td>
+                    <td class="numero">@e.UnidadesEnStock.ToString("0.##")</td>
+                    <td class="numero">@e.ValorStockBs.ToString("N2")</td>
+                    <td class="@(e.TieneVencimientoProximo() ? "text-danger" : "")">
+                        @(e.ProximoVencimiento?.ToString("dd/MM/yyyy") ?? "—")
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-principal"
+                           asp-action="Lotes" asp-route-id="@e.IdMedicamento">Ver lotes</a>
+                        <a class="btn btn-sm btn-outline-secondary"
+                           asp-action="Kardex" asp-route-idMedicamento="@e.IdMedicamento">
+                            Kardex
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+            @if (Model.Existencias.Count > 0)
+            {
+                <tfoot>
+                <tr class="fw-semibold">
+                    <td class="text-end">Total</td>
+                    <td class="numero">
+                        @Model.Existencias.Sum(e => e.UnidadesEnStock).ToString("0.##")
+                    </td>
+                    <td class="numero">@Model.ValorTotalInventario.ToString("N2")</td>
+                    <td colspan="2"></td>
+                </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

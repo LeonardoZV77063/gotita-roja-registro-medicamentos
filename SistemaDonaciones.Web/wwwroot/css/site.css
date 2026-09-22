@@ -1,0 +1,933 @@
+/* ==========================================================================
+   Sistema de registro de pacientes y entrega de medicamentos donados
+   Estilos propios. Bootstrap aporta la retícula y los componentes; acá sólo
+   se define la identidad visual y los ajustes de legibilidad.
+   ========================================================================== */
+
+:root {
+    --color-principal: #176b75;
+    --color-principal-hover: #0e535b;
+    --color-principal-claro: #4f8990;
+    --color-principal-suave: #e4efef;
+    --color-barra-principal: #176b75;
+    --color-barra-texto: #fff;
+    --color-barra-texto-hover: #fff;
+    --color-acento: #a7421c;
+    --color-fondo: #f3f7f7;
+    --color-superficie: #fff;
+    --color-borde: #cbd8d9;
+    --color-borde-control: #7a9091;
+    --color-texto: #203233;
+    --color-texto-suave: #526667;
+    --color-secundario: #687981;
+    --color-secundario-hover: #526168;
+    --color-exito: #3f7550;
+    --color-peligro: #a33f46;
+    --color-advertencia: #71591e;
+    --color-info: #315f76;
+    --color-grafico-1: #176b75;
+    --color-grafico-2: #b95c40;
+    --color-grafico-3: #95701a;
+    --color-grafico-4: #4e7a50;
+    --color-grafico-5: #6c5b9e;
+    --color-grafico-6: #9c4f77;
+    --color-grafico-7: #687981;
+    /* Superficie que se despega del fondo: menús, modales, sugerencias. */
+    --color-superficie-alta: #fff;
+    /* Texto sobre un relleno de color —botón primario, insignia, página activa—.
+       En claro los rellenos son oscuros y lleva blanco; en oscuro se aclaran y
+       el blanco encima deja de leerse, así que allá se invierte. */
+    --color-texto-sobre-color: #fff;
+    --color-tabla-cabecera: #e7efef;
+    --color-peligro-hover: #843138;
+    --color-advertencia-fondo: #d4ad5d;
+    --color-logo-fondo: rgba(255, 255, 255, .94);
+    --color-anillo-foco: rgba(23, 107, 117, .2);
+    --color-realce-barra: rgba(255, 255, 255, .12);
+    --color-borde-muestra: rgba(0, 0, 0, .25);
+    --sombra-barra: 0 2px 8px rgba(32, 50, 51, .14);
+    --sombra-tarjeta: 0 1px 3px rgba(32, 50, 51, .07);
+    --sombra-flotante: 0 4px 10px rgba(0, 0, 0, .08);
+    --sombra-modal: 0 .75rem 2rem rgba(32, 50, 51, .22);
+    --color-alerta-exito-texto: #285138;
+    --color-alerta-exito-fondo: #e5f0e8;
+    --color-alerta-exito-borde: #b9d2c1;
+    --color-alerta-peligro-texto: #762a30;
+    --color-alerta-peligro-fondo: #f7e7e8;
+    --color-alerta-peligro-borde: #e2b8bc;
+    --color-alerta-advertencia-fondo: #f3ecdd;
+    --color-alerta-advertencia-borde: #d7c99f;
+    --color-alerta-info-fondo: #e5eff2;
+    --color-alerta-info-borde: #bad1da;
+    --color-insignia-fifo-fondo: #ddebea;
+    --color-insignia-fifo-borde: #a8c7c5;
+    --color-insignia-manual-fondo: #f3ecdd;
+    --color-insignia-manual-borde: #d7c99f;
+}
+
+/* ── Modo oscuro ────────────────────────────────────────────────────────────
+   Sólo se redefinen las variables de arriba: ninguna regla de más abajo
+   distingue el tema, y por eso cada componente lo hereda sin duplicar código.
+
+   El atributo lo pone _Layout antes de pintar, así que no hay parpadeo claro
+   al cargar. «claro» existe como valor explícito para que quien prefiera el
+   tema claro en un equipo configurado en oscuro no vuelva al oscuro al
+   recargar.
+
+   Los tonos no son negros puros: sobre fondo #12191a el texto #dde7e8 queda
+   en torno a 14:1 y el turquesa aclarado en 7:1, de modo que las cifras y los
+   enlaces siguen cumpliendo AA sin el deslumbre del blanco sobre negro.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root[data-tema="oscuro"] {
+    /* Aclarado respecto del turquesa institucional: el #176b75 original no
+       contrasta lo suficiente contra un fondo oscuro. */
+    --color-principal: #5fb3bd;
+    --color-principal-hover: #8ccfd7;
+    --color-principal-claro: #7cc3cb;
+    --color-principal-suave: #1e3639;
+    /* La barra se oscurece para no quedar brillando sobre la página. */
+    --color-barra-principal: #10494f;
+    --color-acento: #e08e6c;
+    --color-fondo: #12191a;
+    --color-superficie: #1b2526;
+    --color-superficie-alta: #222e30;
+    --color-borde: #33474a;
+    --color-borde-control: #4a6266;
+    --color-texto: #dde7e8;
+    --color-texto-suave: #9aabac;
+    --color-secundario: #8b9ca4;
+    --color-secundario-hover: #a3b2b9;
+    --color-exito: #6fbd86;
+    --color-peligro: #e88a91;
+    --color-advertencia: #d9b565;
+    --color-info: #7ab3cf;
+    --color-tabla-cabecera: #212d2f;
+    --color-peligro-hover: #f0a4aa;
+    --color-advertencia-fondo: #d9b565;
+    /* Los rellenos de color son claros en este tema: encima va tinta oscura. */
+    --color-texto-sobre-color: #12191a;
+    --color-anillo-foco: rgba(95, 179, 189, .3);
+    --color-borde-muestra: rgba(255, 255, 255, .3);
+    --sombra-barra: 0 2px 8px rgba(0, 0, 0, .45);
+    --sombra-tarjeta: 0 1px 3px rgba(0, 0, 0, .35);
+    --sombra-flotante: 0 4px 12px rgba(0, 0, 0, .5);
+    --sombra-modal: 0 .75rem 2rem rgba(0, 0, 0, .6);
+    --color-alerta-exito-texto: #a8d9b8;
+    --color-alerta-exito-fondo: #1b2f22;
+    --color-alerta-exito-borde: #2f5540;
+    --color-alerta-peligro-texto: #f2b4b9;
+    --color-alerta-peligro-fondo: #331d1f;
+    --color-alerta-peligro-borde: #5c3338;
+    --color-alerta-advertencia-fondo: #302818;
+    --color-alerta-advertencia-borde: #574a2c;
+    --color-alerta-info-fondo: #1a2a33;
+    --color-alerta-info-borde: #32505f;
+    --color-insignia-fifo-fondo: #1e3639;
+    --color-insignia-fifo-borde: #3b5c60;
+    --color-insignia-manual-fondo: #302818;
+    --color-insignia-manual-borde: #574a2c;
+    /* Los colores de gráfico se aclaran: los originales se hunden en el fondo. */
+    --color-grafico-1: #4fa8b2;
+    --color-grafico-2: #d9825f;
+    --color-grafico-3: #c4a04a;
+    --color-grafico-4: #74ab77;
+    --color-grafico-5: #9b8ac9;
+    --color-grafico-6: #c97ba2;
+    --color-grafico-7: #8b9ca4;
+}
+
+html {
+    font-size: 15px;
+}
+
+body {
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+/* ── Barra de navegación ────────────────────────────────────────────────── */
+
+.barra-principal {
+    background-color: var(--color-barra-principal);
+    box-shadow: var(--sombra-barra);
+}
+
+.barra-principal .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    color: var(--color-barra-texto);
+    letter-spacing: .2px;
+}
+
+.barra-principal .navbar-brand:hover,
+.barra-principal .navbar-brand:focus {
+    color: var(--color-barra-texto-hover);
+}
+
+.barra-principal.navbar-dark .navbar-nav .nav-link {
+    color: var(--color-barra-texto);
+    border-radius: .35rem;
+}
+
+.barra-principal.navbar-dark .navbar-nav .nav-link:hover,
+.barra-principal.navbar-dark .navbar-nav .nav-link:focus {
+    color: var(--color-barra-texto-hover);
+    background-color: var(--color-realce-barra);
+}
+
+/* El fondo claro se mantiene en los dos temas: el logo es de color y sobre
+   la barra oscura perdería los contornos. */
+.logo-barra-principal {
+    width: 7rem;
+    height: auto;
+    flex: 0 0 auto;
+    padding: .15rem .3rem;
+    background-color: var(--color-logo-fondo);
+    border-radius: .35rem;
+    box-shadow: 0 1px 2px rgba(32, 50, 51, .16);
+}
+
+@media (max-width: 575.98px) {
+    .barra-principal .navbar-brand {
+        gap: .4rem;
+        font-size: 1rem;
+        margin-right: .5rem;
+    }
+
+    .logo-barra-principal {
+        width: 3.75rem;
+    }
+}
+
+.pie {
+    border-top: 1px solid var(--color-borde);
+    background-color: var(--color-superficie);
+    flex-shrink: 0;
+}
+
+/* ── Tarjetas y paneles ─────────────────────────────────────────────────── */
+
+.card {
+    background-color: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: .5rem;
+    box-shadow: var(--sombra-tarjeta);
+}
+
+.card-header {
+    background-color: var(--color-superficie);
+    border-bottom: 1px solid var(--color-borde);
+    font-weight: 600;
+}
+
+.panel-dato {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: .5rem;
+    padding: 1rem 1.15rem;
+    height: 100%;
+}
+
+.panel-dato .cifra {
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--color-principal);
+}
+
+.panel-dato .etiqueta {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--color-texto-suave);
+}
+
+.panel-dato .detalle {
+    font-size: .85rem;
+    color: var(--color-texto-suave);
+}
+
+/* ── Botones ────────────────────────────────────────────────────────────── */
+
+.btn-principal {
+    background-color: var(--color-principal);
+    border-color: var(--color-principal);
+    color: var(--color-texto-sobre-color);
+}
+
+.btn-principal:hover,
+.btn-principal:focus {
+    background-color: var(--color-principal-hover);
+    border-color: var(--color-principal-hover);
+    color: var(--color-texto-sobre-color);
+}
+
+.btn-principal:focus,
+.btn-outline-principal:focus {
+    box-shadow: 0 0 0 .2rem var(--color-anillo-foco);
+}
+
+.btn-outline-principal {
+    border-color: var(--color-principal);
+    color: var(--color-principal);
+}
+
+.btn-outline-principal:hover,
+.btn-outline-principal:focus {
+    background-color: var(--color-principal);
+    border-color: var(--color-principal);
+    color: var(--color-texto-sobre-color);
+}
+
+/* Bootstrap conserva su estructura; estos estados lo alinean con la paleta. */
+a {
+    color: var(--color-principal);
+}
+
+a:hover {
+    color: var(--color-principal-hover);
+}
+
+.text-primary {
+    color: var(--color-principal) !important;
+}
+
+.text-muted {
+    color: var(--color-texto-suave) !important;
+}
+
+.text-success {
+    color: var(--color-exito) !important;
+}
+
+.text-danger {
+    color: var(--color-peligro) !important;
+}
+
+.bg-primary {
+    background-color: var(--color-principal) !important;
+}
+
+.bg-success {
+    background-color: var(--color-exito) !important;
+}
+
+.bg-danger {
+    background-color: var(--color-peligro) !important;
+}
+
+.bg-secondary {
+    background-color: var(--color-secundario) !important;
+}
+
+.bg-warning {
+    background-color: var(--color-advertencia-fondo) !important;
+}
+
+.btn-danger {
+    background-color: var(--color-peligro);
+    border-color: var(--color-peligro);
+    color: var(--color-texto-sobre-color);
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+    background-color: var(--color-peligro-hover);
+    border-color: var(--color-peligro-hover);
+    color: var(--color-texto-sobre-color);
+}
+
+/* Bootstrap escribe las insignias en blanco. Con los rellenos aclarados del
+   tema oscuro hay que invertirlas junto con los botones. */
+.badge.bg-primary,
+.badge.bg-success,
+.badge.bg-danger,
+.badge.bg-secondary,
+.badge.bg-warning {
+    color: var(--color-texto-sobre-color);
+}
+
+.btn-outline-danger {
+    color: var(--color-peligro);
+    border-color: var(--color-peligro);
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    color: var(--color-texto-sobre-color);
+    background-color: var(--color-peligro);
+    border-color: var(--color-peligro);
+}
+
+.btn-outline-secondary {
+    color: var(--color-secundario);
+    border-color: var(--color-secundario);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    color: var(--color-texto-sobre-color);
+    background-color: var(--color-secundario-hover);
+    border-color: var(--color-secundario-hover);
+}
+
+.alert-success {
+    color: var(--color-alerta-exito-texto);
+    background-color: var(--color-alerta-exito-fondo);
+    border-color: var(--color-alerta-exito-borde);
+}
+
+.alert-danger {
+    color: var(--color-alerta-peligro-texto);
+    background-color: var(--color-alerta-peligro-fondo);
+    border-color: var(--color-alerta-peligro-borde);
+}
+
+.alert-warning {
+    color: var(--color-advertencia);
+    background-color: var(--color-alerta-advertencia-fondo);
+    border-color: var(--color-alerta-advertencia-borde);
+}
+
+.alert-info {
+    color: var(--color-info);
+    background-color: var(--color-alerta-info-fondo);
+    border-color: var(--color-alerta-info-borde);
+}
+
+/* ── Confirmación de acciones destructivas ─────────────────────────────── */
+
+.modal-confirmacion-destructiva-dialogo {
+    width: calc(100% - 2rem);
+    max-width: 44rem;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.modal-confirmacion-destructiva .modal-content {
+    border: 0;
+    border-radius: .65rem;
+    box-shadow: var(--sombra-modal);
+}
+
+.modal-confirmacion-destructiva .modal-header,
+.modal-confirmacion-destructiva .modal-footer {
+    border-color: var(--color-borde);
+}
+
+.confirmacion-destructiva-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    flex: 0 0 2.4rem;
+    color: var(--color-peligro);
+    background-color: var(--color-alerta-peligro-fondo);
+    border-radius: 50%;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.confirmacion-destructiva-estado {
+    padding: .5rem .65rem;
+    color: var(--color-alerta-peligro-texto);
+    background-color: var(--color-alerta-peligro-fondo);
+    border-left: 3px solid var(--color-peligro);
+    border-radius: .25rem;
+}
+
+@media (min-width: 576px) {
+    .modal-confirmacion-destructiva .modal-content {
+        aspect-ratio: 16 / 9;
+    }
+
+    .modal-confirmacion-destructiva .modal-body {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+    }
+
+    .modal-confirmacion-destructiva .modal-body > .d-flex {
+        width: 100%;
+    }
+}
+
+.form-control,
+.form-select,
+.form-check-input {
+    border-color: var(--color-borde-control);
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--color-principal-claro);
+    box-shadow: 0 0 0 .2rem var(--color-anillo-foco);
+}
+
+.form-check-input:checked {
+    background-color: var(--color-principal);
+    border-color: var(--color-principal);
+}
+
+.page-link {
+    color: var(--color-principal);
+}
+
+.page-link:hover {
+    color: var(--color-principal-hover);
+    background-color: var(--color-principal-suave);
+    border-color: var(--color-borde);
+}
+
+.page-link:focus {
+    box-shadow: 0 0 0 .2rem var(--color-anillo-foco);
+}
+
+.page-item.active .page-link,
+.dropdown-item:active {
+    color: var(--color-texto-sobre-color);
+    background-color: var(--color-principal);
+    border-color: var(--color-principal);
+}
+
+/* ── Tablas ─────────────────────────────────────────────────────────────── */
+
+.table > thead {
+    background-color: var(--color-tabla-cabecera);
+}
+
+.table > thead th {
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--color-texto-suave);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-borde);
+}
+
+.tabla-compacta td,
+.tabla-compacta th {
+    padding: .45rem .6rem;
+    vertical-align: middle;
+}
+
+.numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.fila-anulada {
+    opacity: .55;
+    text-decoration: line-through;
+}
+
+/* La insignia «Anulada» no se tacha ni se atenúa: es la que explica la fila. */
+.fila-anulada .badge {
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* ── Formularios ────────────────────────────────────────────────────────── */
+
+/* El tag helper conserva el resumen vacío; no debe ocupar espacio sin errores. */
+.validation-summary-valid {
+    display: none;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: .9rem;
+    margin-bottom: .25rem;
+}
+
+.obligatorio::after {
+    content: " *";
+    color: var(--color-acento);
+    font-weight: 700;
+}
+
+.ayuda-campo {
+    font-size: .82rem;
+    color: var(--color-texto-suave);
+}
+
+.seccion-formulario {
+    border-left: 3px solid var(--color-principal);
+    padding-left: .85rem;
+    margin-bottom: 1rem;
+}
+
+.seccion-formulario h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: .15rem;
+}
+
+/* ── Líneas de medicamentos ─────────────────────────────────────────────── */
+
+.linea-medicamento {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: .45rem;
+    padding: .85rem;
+    margin-bottom: .65rem;
+}
+
+.resultado-fifo {
+    font-size: .85rem;
+    background: var(--color-principal-suave);
+    border-left: 3px solid var(--color-principal-claro);
+    padding: .5rem .7rem;
+    border-radius: .25rem;
+    margin-top: .5rem;
+}
+
+/* ── Vista previa de documentos ─────────────────────────────────────────── */
+
+.miniatura-documento {
+    max-width: 100%;
+    max-height: 320px;
+    border: 1px solid var(--color-borde);
+    border-radius: .35rem;
+    background: var(--color-superficie);
+}
+
+.marco-documento {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: .45rem;
+    padding: .6rem;
+    text-align: center;
+}
+
+/* ── Insignias ──────────────────────────────────────────────────────────── */
+
+.insignia-fifo {
+    background-color: var(--color-insignia-fifo-fondo);
+    color: var(--color-principal);
+    border: 1px solid var(--color-insignia-fifo-borde);
+}
+
+.insignia-manual {
+    background-color: var(--color-insignia-manual-fondo);
+    color: var(--color-advertencia);
+    border: 1px solid var(--color-insignia-manual-borde);
+}
+
+/* ── Autocompletado ─────────────────────────────────────────────────────── */
+
+.lista-sugerencias {
+    position: absolute;
+    z-index: 1000;
+    background: var(--color-superficie-alta);
+    border: 1px solid var(--color-borde);
+    border-radius: .35rem;
+    box-shadow: var(--sombra-flotante);
+    max-height: 220px;
+    overflow-y: auto;
+    width: 100%;
+    display: none;
+}
+
+.lista-sugerencias div {
+    padding: .4rem .65rem;
+    cursor: pointer;
+    font-size: .9rem;
+}
+
+.lista-sugerencias div:hover,
+.lista-sugerencias div.activa {
+    background-color: var(--color-principal-suave);
+}
+
+.envoltorio-autocompletado {
+    position: relative;
+}
+
+/* ── Mapa de calor ──────────────────────────────────────────────────────── */
+
+.contenedor-mapa {
+    width: 100%;
+    height: 600px;
+}
+
+@media (max-width: 767.98px) {
+    .contenedor-mapa {
+        height: 420px;
+    }
+}
+
+/* La escala HTML permanece disponible al imprimir o si falla Highcharts. */
+.escala-mapa-muestra {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.2rem;
+    border: 1px solid var(--color-borde-muestra);
+    flex-shrink: 0;
+    /* Conserva los colores que dan significado a la escala impresa. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* ── Comprobante ────────────────────────────────────────────────────────── */
+
+/* Mantener antes de @media print para que las reglas de impresión prevalezcan. */
+.hoja {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: .4rem;
+    padding: 2rem 2.25rem;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+.tarjeta-impacto {
+    color: #fff;
+    background: linear-gradient(135deg, #3f7550, #276d67);
+    border-color: transparent;
+    box-shadow: 0 .25rem .75rem rgba(32, 50, 51, .14);
+}
+
+.hoja img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* En pantallas angostas, el comprobante evita anchos fijos y desbordamientos. */
+@media (max-width: 575.98px) {
+    .hoja {
+        padding: 1rem .85rem;
+        overflow-wrap: anywhere;
+    }
+
+    .hoja .tabla-datos-paciente,
+    .hoja .tabla-datos-paciente tbody,
+    .hoja .tabla-datos-paciente tr,
+    .hoja .tabla-datos-paciente th,
+    .hoja .tabla-datos-paciente td {
+        display: block;
+        width: auto !important;
+    }
+
+    .hoja .tabla-datos-paciente th {
+        padding-bottom: 0;
+    }
+
+    .hoja .tabla-datos-paciente td {
+        padding-top: 0;
+        margin-bottom: .35rem;
+    }
+}
+
+/* ── Modo oscuro: componentes de Bootstrap ─────────────────────────────────
+   Bootstrap 5.1 es anterior a data-bs-theme y escribe #212529 sobre #fff
+   directamente en sus componentes, sin pasar por variables. Estas reglas son
+   las únicas del archivo que miran el tema, y existen sólo para los
+   componentes que no podemos alcanzar redefiniendo la paleta.
+
+   Al actualizar a Bootstrap 5.3 o posterior, este bloque puede reemplazarse
+   por data-bs-theme="dark" en la etiqueta <html>.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root[data-tema="oscuro"] .dropdown-menu {
+    color: var(--color-texto);
+    background-color: var(--color-superficie-alta);
+    border-color: var(--color-borde);
+    box-shadow: var(--sombra-flotante);
+}
+
+:root[data-tema="oscuro"] .dropdown-item {
+    color: var(--color-texto);
+}
+
+:root[data-tema="oscuro"] .dropdown-item:hover,
+:root[data-tema="oscuro"] .dropdown-item:focus {
+    color: var(--color-texto);
+    background-color: var(--color-principal-suave);
+}
+
+:root[data-tema="oscuro"] .dropdown-divider {
+    border-top-color: var(--color-borde);
+}
+
+:root[data-tema="oscuro"] .form-control,
+:root[data-tema="oscuro"] .form-select,
+:root[data-tema="oscuro"] .input-group-text {
+    color: var(--color-texto);
+    background-color: var(--color-fondo);
+}
+
+/* La flecha del desplegable viene dibujada en un SVG incrustado con trazo
+   oscuro; sobre fondo oscuro desaparece. */
+:root[data-tema="oscuro"] .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239aabac' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+:root[data-tema="oscuro"] .form-control:focus,
+:root[data-tema="oscuro"] .form-select:focus {
+    color: var(--color-texto);
+    background-color: var(--color-fondo);
+}
+
+:root[data-tema="oscuro"] .form-control::placeholder {
+    color: var(--color-texto-suave);
+}
+
+/* Los controles deshabilitados de Bootstrap aclaran el fondo; acá lo contrario. */
+:root[data-tema="oscuro"] .form-control:disabled,
+:root[data-tema="oscuro"] .form-select:disabled,
+:root[data-tema="oscuro"] .form-control[readonly] {
+    background-color: var(--color-superficie-alta);
+    color: var(--color-texto-suave);
+}
+
+:root[data-tema="oscuro"] .modal-content {
+    color: var(--color-texto);
+    background-color: var(--color-superficie);
+    border-color: var(--color-borde);
+}
+
+:root[data-tema="oscuro"] .modal-header,
+:root[data-tema="oscuro"] .modal-footer {
+    border-color: var(--color-borde);
+}
+
+:root[data-tema="oscuro"] .page-link {
+    background-color: var(--color-superficie);
+    border-color: var(--color-borde);
+}
+
+:root[data-tema="oscuro"] .list-group-item {
+    color: var(--color-texto);
+    background-color: var(--color-superficie);
+    border-color: var(--color-borde);
+}
+
+/* Las rayas y el realce de fila son velos negros translúcidos: sobre fondo
+   oscuro no se ven. Se invierten a blanco con la misma intensidad. */
+:root[data-tema="oscuro"] .table {
+    --bs-table-striped-color: var(--color-texto);
+    --bs-table-striped-bg: rgba(255, 255, 255, .04);
+    --bs-table-active-color: var(--color-texto);
+    --bs-table-active-bg: rgba(255, 255, 255, .08);
+    --bs-table-hover-color: var(--color-texto);
+    --bs-table-hover-bg: rgba(255, 255, 255, .06);
+    color: var(--color-texto);
+    border-color: var(--color-borde);
+}
+
+/* La equis de cierre es un SVG negro; se invierte para que se vea. */
+:root[data-tema="oscuro"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Utilidades con color fijo. Son pocas en las vistas, pero delatan el tema
+   claro allí donde aparecen. */
+:root[data-tema="oscuro"] .bg-white,
+:root[data-tema="oscuro"] .bg-light {
+    background-color: var(--color-superficie) !important;
+}
+
+:root[data-tema="oscuro"] .table-light {
+    --bs-table-bg: var(--color-tabla-cabecera);
+    color: var(--color-texto);
+}
+
+:root[data-tema="oscuro"] .text-dark {
+    color: var(--color-texto) !important;
+}
+
+:root[data-tema="oscuro"] .border,
+:root[data-tema="oscuro"] .border-top,
+:root[data-tema="oscuro"] .border-bottom,
+:root[data-tema="oscuro"] .border-start,
+:root[data-tema="oscuro"] .border-end {
+    border-color: var(--color-borde) !important;
+}
+
+/* ── Conmutador de tema ─────────────────────────────────────────────────── */
+
+.boton-tema {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .6rem;
+    color: var(--color-barra-texto);
+    background-color: transparent;
+    border: 1px solid var(--color-realce-barra);
+    border-radius: .35rem;
+    font-size: .85rem;
+    line-height: 1.6;
+}
+
+.boton-tema:hover,
+.boton-tema:focus {
+    color: var(--color-barra-texto-hover);
+    background-color: var(--color-realce-barra);
+}
+
+.boton-tema:focus {
+    outline: 2px solid var(--color-barra-texto);
+    outline-offset: 1px;
+}
+
+.boton-tema .icono-tema {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* ── Impresión ──────────────────────────────────────────────────────────── */
+
+@media print {
+    /* El comprobante se imprime en papel blanco cualquiera sea el tema de la
+       pantalla: en oscuro saldría con enormes manchas de tinta y el texto
+       claro quedaría ilegible. */
+    :root[data-tema="oscuro"] {
+        --color-fondo: #fff;
+        --color-superficie: #fff;
+        --color-superficie-alta: #fff;
+        --color-texto: #203233;
+        --color-texto-suave: #526667;
+        --color-borde: #cbd8d9;
+        --color-principal: #176b75;
+        --color-tabla-cabecera: #e7efef;
+        --color-borde-muestra: rgba(0, 0, 0, .25);
+        --color-texto-sobre-color: #fff;
+    }
+
+    :root[data-tema="oscuro"] body,
+    :root[data-tema="oscuro"] .table {
+        color: #203233;
+    }
+
+    .sin-imprimir,
+    .navbar,
+    .pie,
+    .alert {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .hoja {
+        box-shadow: none;
+        border: none;
+        margin: 0;
+        padding: 0;
+        max-width: 100%;
+    }
+}

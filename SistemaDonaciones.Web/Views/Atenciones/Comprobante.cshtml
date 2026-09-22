@@ -1,0 +1,133 @@
+@model ComprobanteViewModel
+@{
+    ViewData["Title"] = $"Comprobante {Model.Atencion.NumeroFormulario}";
+    Layout = "_LayoutLimpio";
+    var a = Model.Atencion;
+    var p = a.Paciente!;
+}
+
+<div class="text-end my-3 sin-imprimir">
+    <button class="btn btn-principal" onclick="window.print()">Imprimir</button>
+    <a class="btn btn-link" asp-action="Detalle" asp-route-id="@a.IdAtencion">Volver</a>
+</div>
+
+<div class="hoja">
+    <header class="text-center mb-4 pb-3 border-bottom">
+        <img src="~/img/logo.png" alt="Logo de @Model.NombreInstitucion" style="max-height: 230px; margin-bottom: 30px;" />
+        <h1 class="h5 mb-1">@Model.NombreInstitucion</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.DireccionInstitucion)
+             || !string.IsNullOrWhiteSpace(Model.TelefonoInstitucion))
+        {
+            <div class="small text-muted">
+                @Model.DireccionInstitucion
+                @if (!string.IsNullOrWhiteSpace(Model.TelefonoInstitucion))
+                {
+                    <text> · Tel. @Model.TelefonoInstitucion</text>
+                }
+            </div>
+        }
+        <div class="mt-3">
+            <strong>COMPROBANTE DE ENTREGA DE MEDICAMENTOS</strong>
+        </div>
+        <div class="small">
+            Formulario N° <strong>@a.NumeroFormulario</strong> ·
+            @a.FechaAtencion.ToString("dd/MM/yyyy")
+        </div>
+    </header>
+
+    <section class="mb-4">
+        <table class="table table-sm table-borderless mb-0 tabla-datos-paciente">
+            <tbody>
+            <tr>
+                <th style="width: 9rem;">Paciente</th>
+                <td>@p.NombreCompleto</td>
+                <th style="width: 6rem;">Edad</th>
+                <td>@p.Edad años</td>
+            </tr>
+            <tr>
+                <th>Carnet</th>
+                <td>@p.DocumentoCompleto @p.ExtensionDoc</td>
+                <th>Sexo</th>
+                <td>@p.Sexo?.Descripcion</td>
+            </tr>
+            <tr>
+                <th>Diagnóstico</th>
+                <td colspan="3">@a.Diagnostico?.Descripcion</td>
+            </tr>
+            <tr>
+                <th>Condición</th>
+                <td>@a.Condicion?.Descripcion</td>
+                <th>Establecimiento</th>
+                <td>@(a.Establecimiento?.Nombre ?? "—")</td>
+            </tr>
+            @* La procedencia prioriza el origen y usa la residencia como
+               compatibilidad para fichas que todavía no tienen origen. *@
+            <tr>
+                <th>Procedencia</th>
+                <td colspan="3">@(p.ProcedenciaCorta ?? "—")</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="mb-4 table-responsive">
+        <table class="table table-sm table-bordered">
+            <thead>
+            <tr>
+                <th>Medicamento</th>
+                <th class="numero" style="width: 7rem;">Cantidad</th>
+                <th class="numero" style="width: 9rem;">Valor (Bs)</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var d in a.Detalles)
+            {
+                <tr>
+                    <td>
+                        @d.Medicamento?.Nombre
+                        @if (d.Medicamento?.UnidadMedida is not null)
+                        {
+                            <text> (@d.Medicamento.UnidadMedida.Descripcion)</text>
+                        }
+                    </td>
+                    <td class="numero">@d.Cantidad.ToString("0.##")</td>
+                    <td class="numero">@d.MontoTotal.ToString("N2")</td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr>
+                <th colspan="2" class="text-end">Total donado</th>
+                <th class="numero">@Model.MontoTotal.ToString("N2")</th>
+            </tr>
+            </tfoot>
+        </table>
+    </section>
+
+    <section class="small mb-5">
+        <p class="mb-0">
+            Declaro haber recibido en calidad de <strong>donación</strong> los
+            medicamentos detallados, y que la receta médica original me fue
+            devuelta luego de su registro digital.
+        </p>
+    </section>
+
+    <section class="row mt-5 pt-4 text-center small">
+        <div class="col-6">
+            <div style="border-top: 1px solid #000; padding-top: .4rem;">
+                Firma del paciente o responsable
+            </div>
+            <div class="mt-1">C.I. @p.DocumentoCompleto</div>
+        </div>
+        <div class="col-6">
+            <div style="border-top: 1px solid #000; padding-top: .4rem;">
+                Firma y sello de la institución
+            </div>
+        </div>
+    </section>
+
+    <footer class="mt-5 pt-2 border-top small text-muted text-center">
+        Documento generado el @DateTime.Now.ToString("dd/MM/yyyy HH:mm") ·
+        Registro interno N° @a.IdAtencion
+    </footer>
+</div>

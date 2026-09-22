@@ -1,0 +1,211 @@
+@{
+    var esAdmin = User.IsInRole(Rol.Administrador);
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Registro de entregas</title>
+    <link rel="icon" type="image/png" href="~/img/iconGotita-roja.png" />
+
+    @* El tema se fija antes de cargar las hojas de estilo y antes de pintar.
+       Hecho más tarde —en site.js, al final del cuerpo— la página aparecería
+       un instante en claro y saltaría a oscuro a la vista de la usuaria.
+       Por eso este script va en línea y no en un archivo aparte: uno externo
+       impondría una petición más en el camino crítico. *@
+    <script>
+        (function () {
+            var tema = null;
+            try {
+                tema = window.localStorage.getItem('gotitaroja.tema');
+            } catch (e) {
+                /* Navegación privada o almacenamiento bloqueado. */
+            }
+
+            if (tema !== 'claro' && tema !== 'oscuro') {
+                tema = window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'oscuro'
+                    : 'claro';
+            }
+
+            document.documentElement.setAttribute('data-tema', tema);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <nav class="navbar navbar-expand-lg navbar-dark barra-principal">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-semibold" asp-controller="Home" asp-action="Index">
+                <img class="logo-barra-principal"
+                     src="~/img/logoGotita-roja.png"
+                     alt="" />
+                <span>Registro de entregas</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menuPrincipal" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Pacientes" asp-action="Index">
+                            Atender paciente
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Pacientes" asp-action="Listado">
+                            Pacientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Atenciones" asp-action="Index">
+                            Entregas
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown">Farmacia</a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Farmacia" asp-action="Index">
+                                    Existencias
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Farmacia" asp-action="Ingresar">
+                                    Registrar ingreso
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Farmacia" asp-action="Kardex">
+                                    Kardex
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown">Reportes</a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Reportes" asp-action="Porcentajes">
+                                    Tablero de porcentajes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Reportes" asp-action="Index">
+                                    Estadísticas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Reportes" asp-action="Medicamentos">
+                                    Medicamentos entregados
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Reportes" asp-action="Respaldos">
+                                    Respaldos exportados
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    @if (esAdmin)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button"
+                               data-bs-toggle="dropdown">Administración</a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Administracion" asp-action="Usuarios">
+                                        Usuarios
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Administracion" asp-action="Catalogos">
+                                        Catálogos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Administracion" asp-action="Bitacora">
+                                        Bitácora
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Administracion" asp-action="Backups">
+                                        Copias de seguridad
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                </ul>
+
+                <ul class="navbar-nav align-items-lg-center">
+                    <li class="nav-item me-lg-2 my-2 my-lg-0">
+                        @* El texto y el icono los escribe site.js según el tema
+                           vigente; acá van los del tema claro, que es el que
+                           queda si el navegador no ejecuta scripts. *@
+                        <button type="button" class="boton-tema"
+                                data-conmuta-tema
+                                aria-pressed="false"
+                                title="Cambiar a modo oscuro">
+                            <span class="icono-tema" aria-hidden="true"
+                                  data-icono-tema>☾</span>
+                            <span data-texto-tema>Oscuro</span>
+                        </button>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown">
+                            @User.NombreCompleto()
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Cuenta"
+                                   asp-action="CambiarContrasena">Cambiar contraseña</a>
+                            </li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                @* El tag helper de formulario ya agrega el token
+                                   antifalsificación; ponerlo también a mano
+                                   generaría dos campos con el mismo nombre. *@
+                                <form asp-controller="Cuenta" asp-action="Salir" method="post">
+                                    <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+}
+
+<main class="container-fluid px-lg-4 py-4">
+    <partial name="_Mensajes" />
+    @RenderBody()
+</main>
+
+<footer class="pie text-center py-3">
+    <small class="text-muted">
+        Sistema de registro de pacientes y entrega de medicamentos donados ·
+        @DateTime.Today.Year
+    </small>
+</footer>
+
+<partial name="_ConfirmacionDestructiva" />
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

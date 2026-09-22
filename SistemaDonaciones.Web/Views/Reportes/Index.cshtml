@@ -1,0 +1,850 @@
+
+
+
+@model ReporteEstadisticoViewModel
+
+@{
+    ViewData["Title"] = "Estadísticas";
+
+    var desdeIso = Model.Desde.ToString("yyyy-MM-dd");
+    var hastaIso = Model.Hasta.ToString("yyyy-MM-dd");
+    
+    var meses = new[]
+    {
+        new { Id = 1, Nombre = "Enero" },
+        new { Id = 2, Nombre = "Febrero" },
+        new { Id = 3, Nombre = "Marzo" },
+        new { Id = 4, Nombre = "Abril" },
+        new { Id = 5, Nombre = "Mayo" },
+        new { Id = 6, Nombre = "Junio" },
+        new { Id = 7, Nombre = "Julio" },
+        new { Id = 8, Nombre = "Agosto" },
+        new { Id = 9, Nombre = "Septiembre" },
+        new { Id = 10, Nombre = "Octubre" },
+        new { Id = 11, Nombre = "Noviembre" },
+        new { Id = 12, Nombre = "Diciembre" }
+    };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">Estadísticas</h1>
+        <p class="text-muted mb-0">
+            Análisis de pacientes, atenciones y ayuda entregada
+        </p>
+    </div>
+
+    <a class="btn btn-outline-principal"
+       asp-action="ExportarCsv"
+       asp-route-desde="@desdeIso"
+       asp-route-hasta="@hastaIso">
+        Exportar a Excel (CSV)
+    </a>
+</div>
+
+
+
+<div class="card mb-4">
+    <div class="card-header">
+        Filtros estadísticos
+    </div>
+
+    <div class="card-body">
+
+        <div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+
+        <form asp-action="Index"
+              method="get"
+              class="row g-3 align-items-end">
+
+
+            <div class="col-md-3">
+                <label asp-for="Desde" class="form-label"></label>
+                <input asp-for="Desde"
+                       type="date"
+                       class="form-control" />
+            </div>
+            
+            <div class="col-md-3">
+                <label asp-for="Hasta" class="form-label"></label>
+                <input asp-for="Hasta"
+                       type="date"
+                       class="form-control" />
+            </div>
+
+
+
+            <div class="col-md-3">
+                <label asp-for="Anio" class="form-label"></label>
+
+                <select asp-for="Anio" class="form-select">
+
+                    <option value="">Todos</option>
+
+                    @for (var anio = DateTime.Today.Year;
+                          anio >= DateTime.Today.Year - 10;
+                          anio--)
+                    {
+                        <option value="@anio">
+                            @anio
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+
+            <div class="col-md-3">
+                <label asp-for="Mes" class="form-label"></label>
+
+                <select asp-for="Mes" class="form-select">
+
+                    <option value="">Todos</option>
+
+                    @foreach (var mes in meses)
+                    {
+                        <option value="@mes.Id">
+                            @mes.Nombre
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <label asp-for="IdSexo"
+                       class="form-label"></label>
+
+                <select asp-for="IdSexo"
+                        class="form-select">
+
+                    <option value="">Todos</option>
+
+                    @foreach (var sexo in Model.Sexos)
+                    {
+                        <option value="@sexo.IdSexo">
+                            @sexo.Descripcion
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <label asp-for="EdadDesde"
+                       class="form-label"></label>
+
+                <input asp-for="EdadDesde"
+                       type="number"
+                       min="0"
+                       max="120"
+                       class="form-control"
+                       placeholder="Ej. 20" />
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <label asp-for="EdadHasta"
+                       class="form-label"></label>
+
+                <input asp-for="EdadHasta"
+                       type="number"
+                       min="0"
+                       max="120"
+                       class="form-control"
+                       placeholder="Ej. 30" />
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <label asp-for="IdCondicion"
+                       class="form-label"></label>
+
+                <select asp-for="IdCondicion"
+                        class="form-select">
+
+                    <option value="">Todas</option>
+
+                    @foreach (var condicion in Model.Condiciones)
+                    {
+                        <option value="@condicion.IdCondicion">
+                            @condicion.Descripcion
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-4">
+
+                <label asp-for="IdPaisOrigen"
+                       class="form-label"></label>
+
+                <select asp-for="IdPaisOrigen" class="form-select">
+
+                    <option value="">Todos</option>
+
+                    @foreach (var pais in Model.Paises)
+                    {
+                        <option value="@pais.IdPais">@pais.Nombre</option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-4">
+
+                <label asp-for="IdDepartamento"
+                       class="form-label"></label>
+
+                <select asp-for="IdDepartamento"
+                        class="form-select"
+                        data-cascada="filtro"
+                        data-nivel="departamento">
+
+                    <option value="">Todos</option>
+
+                    @foreach (var departamento in Model.Departamentos)
+                    {
+                        <option value="@departamento.IdDepartamento">
+                            @departamento.Nombre
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-4">
+
+                <label asp-for="IdProvincia"
+                       class="form-label"></label>
+
+                @* Sin departamento elegido la provincia sigue mostrando las
+                   del país entero: acá «todos» significa todo Bolivia, no
+                   «elija primero el departamento». *@
+                <select asp-for="IdProvincia"
+                        class="form-select"
+                        data-cascada="filtro"
+                        data-nivel="provincia"
+                        data-cascada-bloquear="no">
+
+                    <option value="">Todas</option>
+
+                    @foreach (var provincia in Model.Provincias)
+                    {
+                        <option value="@provincia.IdProvincia"
+                                data-departamento="@provincia.IdDepartamento">
+                            @provincia.Nombre
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-4">
+
+                <label asp-for="IdMunicipio"
+                       class="form-label"></label>
+
+                <select asp-for="IdMunicipio"
+                        class="form-select"
+                        data-cascada="filtro"
+                        data-nivel="municipio">
+
+                    <option value="">Todos</option>
+
+                    @foreach (var municipio in Model.Municipios)
+                    {
+                        <option value="@municipio.IdMunicipio"
+                                data-provincia="@municipio.IdProvincia">
+                            @municipio.Nombre
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            @* Cuando falta origen, el filtro usa residencia; el aviso evita
+               interpretar el resultado como procedencia confirmada. *@
+            <div class="col-12">
+                <p class="ayuda-campo mb-0">
+                    La ubicación filtra por el lugar del que es el paciente. Mientras
+                    su ficha no lo tenga cargado se usa el de su residencia, así que
+                    el resultado puede incluir a quien sólo vive ahí. Departamento,
+                    provincia y municipio son del catálogo boliviano: para aislar a
+                    los pacientes de otros países hay que usar el filtro de país.
+                </p>
+            </div>
+
+
+
+            <div class="col-md-6">
+
+                <label asp-for="IdDiagnostico"
+                       class="form-label"></label>
+
+                <select asp-for="IdDiagnostico"
+                        class="form-select">
+
+                    <option value="">Todos los diagnósticos</option>
+
+                    @foreach (var diagnostico in Model.Diagnosticos)
+                    {
+                        <option value="@diagnostico.IdDiagnostico">
+                            @diagnostico.Descripcion
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <button type="submit"
+                        class="btn btn-principal w-100">
+                    Aplicar filtros
+                </button>
+
+            </div>
+
+            <div class="col-md-3">
+
+                <a asp-action="Index"
+                   class="btn btn-outline-secondary w-100">
+                    Limpiar filtros
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+            Corrija los filtros marcados arriba para ver las estadísticas.
+        </div>
+    </div>
+}
+else if (!Model.HayDatos)
+{
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+
+            <div class="mb-2">
+                No existen atenciones que coincidan con los filtros seleccionados.
+            </div>
+
+            <small>
+                Modifique o elimine alguno de los filtros para ampliar la búsqueda.
+            </small>
+
+        </div>
+    </div>
+}
+else
+{
+
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-6 col-xl">
+
+            <div class="panel-dato h-100">
+
+                <div class="etiqueta">
+                    Pacientes únicos
+                </div>
+
+                <div class="cifra">
+                    @Model.PacientesUnicos
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl">
+
+            <div class="panel-dato h-100">
+
+                <div class="etiqueta">
+                    Atenciones
+                </div>
+
+                <div class="cifra">
+                    @Model.TotalAtenciones
+                </div>
+
+            </div>
+
+        </div>
+    
+
+        <div class="col-md-6 col-xl">
+
+            <div class="panel-dato h-100">
+
+                <div class="etiqueta">
+                    Total donado
+                </div>
+
+                <div class="cifra">
+                    @Model.MontoTotal.ToString("N2")
+                    <small class="fs-6">Bs</small>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl">
+
+            <div class="panel-dato h-100">
+
+                <div class="etiqueta">
+                    Promedio por atención
+                </div>
+
+                <div class="cifra">
+                    @Model.PromedioPorAtencion.ToString("N2")
+                    <small class="fs-6">Bs</small>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl">
+
+            <div class="panel-dato h-100">
+
+                <div class="etiqueta">
+                    Unidades entregadas
+                </div>
+
+                <div class="cifra">
+                    @Model.UnidadesEntregadas.ToString("N2")
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-lg-6">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+                    Pacientes por sexo
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table tabla-compacta mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Sexo</th>
+                                <th class="text-end">Pacientes</th>
+                                <th class="text-end">Atenciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var fila in Model.PorSexo)
+                            {
+                                <tr>
+                                    <td>@fila.Nombre</td>
+                                    <td class="text-end">@fila.Pacientes</td>
+                                    <td class="text-end">@fila.Atenciones</td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-lg-6">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+                    Pacientes por condición
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table tabla-compacta mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Condición</th>
+                                <th class="text-end">Pacientes</th>
+                                <th class="text-end">Atenciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var fila in Model.PorCondicion)
+                            {
+                                <tr>
+                                    <td>@fila.Nombre</td>
+                                    <td class="text-end">@fila.Pacientes</td>
+                                    <td class="text-end">@fila.Atenciones</td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Pacientes por grupo etario
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table tabla-compacta mb-0">
+
+                <thead>
+                    <tr>
+                        <th>Grupo etario</th>
+                        <th class="text-end">Pacientes</th>
+                        <th class="text-end">Atenciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var fila in Model.PorEdad)
+                    {
+                        <tr>
+                            <td>@fila.Nombre</td>
+                            <td class="text-end">@fila.Pacientes</td>
+                            <td class="text-end">@fila.Atenciones</td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-lg-6">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+                    Pacientes por departamento de origen
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table tabla-compacta mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Departamento</th>
+                                <th class="text-end">Pacientes</th>
+                                <th class="text-end">Atenciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var fila in Model.PorDepartamento)
+                            {
+                                <tr>
+                                    <td>@fila.Nombre</td>
+                                    <td class="text-end">@fila.Pacientes</td>
+                                    <td class="text-end">@fila.Atenciones</td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-lg-6">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+                    Pacientes por municipio de origen
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table tabla-compacta mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Municipio</th>
+                                <th class="text-end">Pacientes</th>
+                                <th class="text-end">Atenciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var fila in Model.PorMunicipio)
+                            {
+                                <tr>
+                                    <td>@fila.Nombre</td>
+                                    <td class="text-end">@fila.Pacientes</td>
+                                    <td class="text-end">@fila.Atenciones</td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    @* La advertencia distingue procedencia confirmada del fallback a residencia. *@
+    @if (Model.PorPaisOrigen.Count > 0)
+    {
+        <div class="card mb-4">
+
+            <div class="card-header">
+                Pacientes del exterior, por país de origen
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table tabla-compacta mb-0">
+
+                    <thead>
+                        <tr>
+                            <th>País</th>
+                            <th class="text-end">Pacientes</th>
+                            <th class="text-end">Atenciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var fila in Model.PorPaisOrigen)
+                        {
+                            <tr>
+                                <td>@fila.Nombre</td>
+                                <td class="text-end">@fila.Pacientes</td>
+                                <td class="text-end">@fila.Atenciones</td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    }
+
+    @if (Model.AtencionesPorResidencia > 0
+         || Model.AtencionesSinUbicacion > 0
+         || Model.AtencionesDelExterior > 0)
+    {
+        <p class="small text-muted">
+            Las dos tablas de arriba cuentan a cada paciente por el lugar del que es.
+            @if (Model.AtencionesPorResidencia > 0)
+            {
+                <text>
+                    De ellas, @Model.AtencionesPorResidencia atención(es) se contaron
+                    por donde vive el paciente, porque su ficha todavía no dice de
+                    dónde es.
+                </text>
+            }
+            @if (Model.AtencionesDelExterior > 0)
+            {
+                <text>
+                    @Model.AtencionesDelExterior atención(es) corresponden a pacientes
+                    de otros países y van en la tabla aparte: el catálogo territorial
+                    es boliviano.
+                </text>
+            }
+            @if (Model.AtencionesSinUbicacion > 0)
+            {
+                <text>
+                    Otras @Model.AtencionesSinUbicacion quedaron fuera: ese paciente no
+                    tiene ninguna ubicación cargada.
+                </text>
+            }
+        </p>
+    }
+
+
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Diagnósticos atendidos
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table tabla-compacta mb-0">
+
+                <thead>
+
+                    <tr>
+                        <th>Diagnóstico</th>
+                        <th class="text-end">Pacientes</th>
+                        <th class="text-end">Atenciones</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var fila in Model.PorDiagnostico)
+                    {
+                        <tr>
+                            <td>@fila.Nombre</td>
+                            <td class="text-end">@fila.Pacientes</td>
+                            <td class="text-end">@fila.Atenciones</td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Evolución mensual de la ayuda
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table tabla-compacta mb-0">
+
+                <thead>
+
+                    <tr>
+                        <th>Período</th>
+                        <th class="text-end">Pacientes</th>
+                        <th class="text-end">Atenciones</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var fila in Model.EvolucionMensual)
+                    {
+                        <tr>
+
+                            <td>
+                                @fila.Periodo
+                            </td>
+
+                            <td class="text-end">
+                                @fila.Pacientes
+                            </td>
+
+                            <td class="text-end">
+                                @fila.Atenciones
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+}

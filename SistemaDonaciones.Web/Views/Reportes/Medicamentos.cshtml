@@ -1,0 +1,83 @@
+@model ReporteMedicamentosViewModel
+@{
+    ViewData["Title"] = "Medicamentos entregados";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Medicamentos entregados</h1>
+    <p class="text-muted mb-0">
+        Del @Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy") ·
+        @Model.TotalEntregas entrega(s) · @Model.MontoTotal.ToString("N2") Bs
+    </p>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+        <form asp-action="Medicamentos" method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label asp-for="Desde" class="form-label"></label>
+                <input asp-for="Desde" type="date" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Hasta" class="form-label"></label>
+                <input asp-for="Hasta" type="date" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-principal w-100">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0">
+            <thead>
+            <tr>
+                <th>Medicamento</th>
+                <th class="numero">Entregas</th>
+                <th class="numero">Unidades</th>
+                <th class="numero">Pacientes</th>
+                <th class="numero">Monto (Bs)</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var f in Model.Filas)
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="Farmacia" asp-action="Kardex"
+                           asp-route-idMedicamento="@f.IdMedicamento">@f.Medicamento</a>
+                    </td>
+                    <td class="numero">@f.Entregas</td>
+                    <td class="numero">@f.Unidades.ToString("0.##")</td>
+                    <td class="numero">@f.PacientesDistintos</td>
+                    <td class="numero">@f.MontoDonado.ToString("N2")</td>
+                </tr>
+            }
+            @if (Model.Filas.Count == 0)
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        @(ViewData.ModelState.IsValid
+                            ? "No hay entregas en el período seleccionado."
+                            : "Corrija el período indicado arriba para ver el reporte.")
+                    </td>
+                </tr>
+            }
+            </tbody>
+            @if (Model.Filas.Count > 0)
+            {
+                <tfoot>
+                <tr class="fw-semibold">
+                    <td class="text-end">Total</td>
+                    <td class="numero">@Model.TotalEntregas</td>
+                    <td colspan="2"></td>
+                    <td class="numero">@Model.MontoTotal.ToString("N2")</td>
+                </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+@model AnularAtencionViewModel
+@{
+    ViewData["Title"] = "Anular entrega";
+}
+
+<div class="card" style="max-width: 40rem;">
+    <h1 class="card-header h5 mb-0">Anular entrega @Model.NumeroFormulario</h1>
+    <div class="card-body">
+        <div class="alert alert-warning small">
+            La entrega no se borra. Queda registrada como <strong>anulada</strong>,
+            con el motivo y la fecha, porque el archivo que respalda una auditoría
+            no puede tener huecos.
+        </div>
+
+        <dl class="row small mb-4">
+            <dt class="col-4">Paciente</dt>
+            <dd class="col-8">@Model.Paciente</dd>
+            <dt class="col-4">Fecha</dt>
+            <dd class="col-8">@Model.FechaAtencion.ToString("dd/MM/yyyy")</dd>
+        </dl>
+
+        <form asp-action="Anular" method="post"
+              data-confirmacion-destructiva
+              data-confirmacion-titulo="Confirmar anulación de entrega"
+              data-confirmacion-mensaje="¿Desea confirmar los cambios y anular esta entrega? Esta acción no se puede deshacer desde el sistema."
+              data-confirmacion-accion="Sí, anular entrega">
+            @* El servidor relee el resto para no confiar en valores reenviados por el cliente. *@
+            <input type="hidden" asp-for="IdAtencion" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            <div class="mb-3">
+                <label asp-for="Motivo" class="form-label obligatorio"></label>
+                <textarea asp-for="Motivo" class="form-control" rows="3"
+                          data-foco-inicial></textarea>
+                <span asp-validation-for="Motivo" class="text-danger small"></span>
+            </div>
+
+            @if (Model.TieneConsumosDeInventario)
+            {
+                <div class="form-check mb-4">
+                    <input asp-for="DevolverStock" class="form-check-input" />
+                    <label asp-for="DevolverStock" class="form-check-label"></label>
+                    <div class="ayuda-campo">
+                        Las unidades vuelven a los mismos lotes de los que salieron,
+                        conservando su precio original.
+                    </div>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-danger"
+                    data-confirmar="¿Confirma la anulación de esta entrega?">
+                Anular entrega
+            </button>
+            <a class="btn btn-link" asp-action="Detalle" asp-route-id="@Model.IdAtencion">
+                Cancelar
+            </a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,274 @@
+@model SistemaDonaciones.Web.Models.ViewModels.MapaCalorViewModel
+@{
+    ViewData["Title"] = "Mapa de Calor Epidemiológico";
+
+    // Texto para lectores de pantalla, serializado como literal de JavaScript
+    // (el serializador escapa comillas y signos de HTML del nombre).
+    var descripcionMapaJs = System.Text.Json.JsonSerializer.Serialize(
+        "Mapa de Bolivia por departamento. Cada región indica la cantidad de atenciones registradas para: "
+        + Model.NombreDiagnosticoSeleccionado + ".");
+}
+
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+    <div>
+        <h1 class="h3 mb-1">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">
+            Concentración geográfica de atenciones filtrada por diagnóstico, según
+            el departamento del que es cada paciente.
+        </p>
+        <div class="alert alert-info mt-3 mb-0 py-2">
+            <strong>Nota técnica:</strong> el color indica cuántas veces se brindó atención a pacientes de esa región, no cuánta enfermedad hay ahí. Si una misma persona vuelve varias veces, su región sube de nivel, porque consume más recursos de la institución. Los cuatro niveles y sus rangos están en la escala que acompaña al mapa; un departamento en gris no tiene ninguna atención registrada.
+        </div>
+    </div>
+    <a asp-action="Porcentajes" class="btn btn-outline-secondary flex-shrink-0 align-self-start align-self-md-end">
+        &larr; Volver a Porcentajes
+    </a>
+</div>
+
+<div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-bold bg-white">Filtros</div>
+            <div class="card-body">
+                <form method="get">
+                    <div class="mb-3">
+                        <label asp-for="IdDiagnostico" class="form-label">Diagnóstico</label>
+                        <select asp-for="IdDiagnostico" class="form-select">
+                            <option value="">Todos los diagnósticos</option>
+                            @foreach (var diag in Model.Diagnosticos)
+                            {
+                                <option value="@diag.IdDiagnostico">@diag.Descripcion</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-principal w-100">
+                        Actualizar Mapa
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body bg-light text-center">
+                <h2 class="h6 text-muted mb-2">Mostrando datos para:</h2>
+                <p class="h5 text-primary mb-0">@Model.NombreDiagnosticoSeleccionado</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                @if (ViewData.ModelState.IsValid && !Model.HayDatos)
+                {
+                    <div class="alert alert-secondary py-2" role="status">
+                        No hay atenciones con una ubicación registrada para
+                        <strong>@Model.NombreDiagnosticoSeleccionado.ToLower()</strong>.
+                        El mapa se muestra vacío.
+                    </div>
+                }
+
+                @* El mapa colorea por el lugar de origen del paciente. Estas dos
+                   notas dicen con qué dato se contó lo que se está viendo: sin
+                   ellas, una mancha sobre Santa Cruz puede ser incidencia real o
+                   sólo gente que se mudó para tratarse. *@
+                @if (Model.AtencionesPorResidencia > 0)
+                {
+                    <p class="small text-muted mb-1">
+                        @Model.AtencionesPorResidencia atención(es) se ubicaron por
+                        donde vive el paciente, porque su ficha todavía no dice de
+                        dónde es. Se corrige desde <em>Editar datos</em> en la ficha.
+                    </p>
+                }
+
+                @if (Model.AtencionesDelExterior > 0)
+                {
+                    <p class="small text-muted mb-1">
+                        @Model.AtencionesDelExterior atención(es) son de pacientes de otros
+                        países y no se pintan en el mapa, que es de Bolivia. El listado de
+                        reportes las desglosa por país para el período que se elija ahí.
+                    </p>
+                }
+
+                @if (Model.AtencionesSinUbicacion > 0)
+                {
+                    <p class="small text-muted">
+                        @Model.AtencionesSinUbicacion atención(es) no aparecen en el mapa porque
+                        el paciente no tiene ninguna ubicación cargada.
+                    </p>
+                }
+
+                @if (Model.EscalaSinContraste)
+                {
+                    @* Con muy pocos registros todos los departamentos caen en el
+                       mismo escalón. Decirlo evita que se lea como un error de
+                       la escala, y evita la tentación de apretar los cortes
+                       hasta fabricar un rojo que el dato no sostiene. *@
+                    <div class="alert alert-light border small" role="status">
+                        Con los registros que hay hoy, todos los departamentos del mapa
+                        caen en el mismo nivel de la escala, así que se ven del mismo
+                        color. No es un error: a medida que se acumulen atenciones los
+                        niveles se van a separar solos. Si hiciera falta ajustar los
+                        cortes antes, se cambian desde la configuración del sistema.
+                    </div>
+                }
+
+                <div id="contenedorMapa" class="contenedor-mapa"
+                     role="region" aria-label="Mapa de Bolivia con atenciones por departamento"></div>
+
+                @* La escala permanece en HTML para que se imprima, sobreviva a
+                   fallos del CDN y no dependa sólo del color. *@
+                @if (Model.Niveles.Count > 0)
+                {
+                    @* role="list" explícito: list-unstyled quita las viñetas y
+                       algunos navegadores le quitan con ellas el rol de lista,
+                       y con el rol se pierde el aria-label. *@
+                    <ul class="list-unstyled d-flex flex-wrap gap-3 mt-3 mb-0 small"
+                        role="list" aria-label="Escala de colores del mapa">
+                        @foreach (var nivel in Model.Niveles)
+                        {
+                            <li class="d-flex align-items-center gap-2" role="listitem">
+                                <span class="escala-mapa-muestra"
+                                      style="background-color:@nivel.Color" aria-hidden="true"></span>
+                                <span>@nivel.Nombre <span class="text-muted">(@nivel.Rango)</span></span>
+                            </li>
+                        }
+                        <li class="d-flex align-items-center gap-2" role="listitem">
+                            <span class="escala-mapa-muestra"
+                                  style="background-color:@Model.ColorSinDatos" aria-hidden="true"></span>
+                            <span>Sin registros <span class="text-muted">(0)</span></span>
+                        </li>
+                    </ul>
+                }
+
+                @if (Model.HayDatos)
+                {
+                    <details class="mt-3">
+                        <summary class="small">Ver los datos del mapa en una tabla</summary>
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm tabla-compacta mb-0">
+                                <caption class="visually-hidden">Atenciones por departamento</caption>
+                                <thead>
+                                <tr>
+                                    <th scope="col">Departamento</th>
+                                    <th scope="col" class="numero">Atenciones</th>
+                                    <th scope="col">Nivel</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var d in Model.Departamentos)
+                                {
+                                    <tr>
+                                        <td>@d.Departamento</td>
+                                        <td class="numero">@d.Atenciones</td>
+                                        <td>@Model.NivelDe(d.Atenciones)</td>
+                                    </tr>
+                                }
+                                </tbody>
+                                <tfoot>
+                                <tr class="fw-semibold">
+                                    <td>Total</td>
+                                    <td class="numero">@Model.TotalEnMapa</td>
+                                    <td></td>
+                                </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </details>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* Las versiones exactas evitan cambios incompatibles no revisados. *@
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@13.0.2/highmaps.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@13.0.2/modules/exporting.js"></script>
+    <!-- Añade navegación por teclado y descripciones para lectores de pantalla. -->
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@13.0.2/modules/accessibility.js"></script>
+    <!-- La colección se versiona aparte y registra la clave usada por chart.map. -->
+    <script src="https://cdn.jsdelivr.net/npm/@@highcharts/map-collection@2.3.3/countries/bo/bo-all.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            if (typeof Highcharts === "undefined") {
+                var contenedor = document.getElementById("contenedorMapa");
+                if (contenedor) {
+                    contenedor.textContent =
+                        "No se pudo cargar el mapa (sin conexión a internet). " +
+                        "Los datos siguen disponibles en la tabla.";
+                }
+                return;
+            }
+
+            var data = @Html.Raw(Model.DatosMapaJson);
+
+            Highcharts.mapChart('contenedorMapa', {
+                chart: {
+                    map: 'countries/bo/bo-all',
+                    events: {
+                        load: function () {
+                            // El enlace SVG de créditos necesita un nombre accesible.
+                            var credito = this.credits && this.credits.element;
+                            if (credito) {
+                                credito.setAttribute('aria-label',
+                                    'Créditos del mapa: Highcharts y Natural Earth (abre otra página)');
+                            }
+                        }
+                    }
+                },
+
+                accessibility: {
+                    description: @Html.Raw(descripcionMapaJs),
+                    point: { valueSuffix: ' atenciones' }
+                },
+
+                title: {
+                    text: 'Casos registrados en Bolivia'
+                },
+
+                subtitle: {
+                    text: 'Basado en el origen regional de los pacientes'
+                },
+
+                mapNavigation: {
+                    enabled: true,
+                    buttonOptions: {
+                        verticalAlign: 'bottom'
+                    }
+                },
+
+                // Clases discretas con cortes absolutos configurables.
+                colorAxis: {
+                    dataClasses: @Html.Raw(Model.EscalaJson)
+                },
+
+                // La escala HTML evita que la leyenda interactiva oculte niveles.
+                legend: {
+                    enabled: false
+                },
+
+                series: [{
+                    data: data,
+                    name: 'Atenciones',
+                    // Sin registros se usa gris, no el nivel de demanda baja. El
+                    // serializador produce un literal seguro para JavaScript.
+                    nullColor: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ColorSinDatos)),
+                    states: {
+                        hover: {
+                            color: '#495057'
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.name}'
+                    }
+                }]
+            });
+        });
+    </script>
+}

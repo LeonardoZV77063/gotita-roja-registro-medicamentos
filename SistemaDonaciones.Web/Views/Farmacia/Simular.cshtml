@@ -1,0 +1,77 @@
+@model SimulacionFifoViewModel
+@{
+    ViewData["Title"] = "Simulación de costeo";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Simulación de costeo FIFO</h1>
+    <p class="text-muted mb-0">
+        @Model.Cantidad.ToString("0.##") unidades de <strong>@Model.Medicamento</strong>
+    </p>
+</div>
+
+@if (!Model.StockSuficiente)
+{
+    <div class="alert alert-danger">
+        <strong>No alcanza el stock.</strong>
+        Hay @Model.StockDisponible.ToString("0.##") unidades disponibles y se
+        piden @Model.Cantidad.ToString("0.##").
+    </div>
+}
+
+<div class="card" style="max-width: 46rem;">
+    <div class="card-header">Reparto entre lotes</div>
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0">
+            <thead>
+            <tr>
+                <th>Lote</th>
+                <th>Ingreso</th>
+                <th>Tipo</th>
+                <th class="numero">Cantidad</th>
+                <th class="numero">Costo unit.</th>
+                <th class="numero">Subtotal</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var r in Model.Reparto)
+            {
+                <tr>
+                    <td>@(r.NumeroLote ?? $"#{r.IdLote}")</td>
+                    <td>@r.FechaIngreso.ToString("dd/MM/yyyy")</td>
+                    <td>@r.TipoIngreso</td>
+                    <td class="numero">@r.Cantidad.ToString("0.##")</td>
+                    <td class="numero">@r.CostoUnitario.ToString("N2")</td>
+                    <td class="numero">@r.Subtotal.ToString("N2")</td>
+                </tr>
+            }
+            @if (Model.Reparto.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No hay lotes disponibles para este medicamento.
+                    </td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr class="fw-semibold">
+                <td colspan="5" class="text-end">Monto de la donación</td>
+                <td class="numero">@Model.MontoTotal.ToString("N2") Bs</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    @if (Model.PromedioResultante.HasValue && Model.Reparto.Count > 1)
+    {
+        <div class="card-body border-top small text-muted">
+            El precio unitario efectivo de esta entrega sería
+            <strong>@Model.PromedioResultante.Value.ToString("N2") Bs</strong>, que resulta
+            de mezclar lotes distintos. Ese número se guarda sólo como referencia:
+            el monto que vale es el total de arriba, calculado lote por lote.
+        </div>
+    }
+</div>
+
+<a class="btn btn-link mt-3" asp-action="Index">Volver a existencias</a>

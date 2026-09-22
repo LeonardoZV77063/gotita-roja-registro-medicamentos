@@ -1,0 +1,73 @@
+﻿@model List<SistemaDonaciones.Web.Servicios.InformacionBackup>
+@{
+    ViewData["Title"] = "Copias de Seguridad";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Copias de Seguridad de la Base de Datos</h1>
+        <p class="text-muted mb-0">Gestión de respaldos automatizados (.bak) en la carpeta de almacenamiento.</p>
+    </div>
+    <form asp-action="CrearBackupManual" method="post">
+        <button type="submit" class="btn btn-principal">
+            Generar Respaldo Ahora
+        </button>
+    </form>
+</div>
+
+@if (TempData["Exito"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Exito"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <span class="fw-bold">Respaldos Almacenados (Máximo 10)</span>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="p-4 text-center text-muted">
+                No se han encontrado archivos de respaldo en la carpeta <code>Almacen/bd_backups</code>.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre del Archivo</th>
+                            <th>Fecha de Creación</th>
+                            <th class="text-end">Tamaño</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var item = Model[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td class="fw-semibold text-primary">@item.NombreArchivo</td>
+                                <td>@item.FechaCreacion.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td class="text-end font-monospace">@item.TamanoFormateado</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

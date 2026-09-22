@@ -1,0 +1,40 @@
+<div class="modal fade modal-confirmacion-destructiva"
+     id="modalConfirmacionDestructiva"
+     tabindex="-1"
+     aria-labelledby="tituloConfirmacionDestructiva"
+     aria-describedby="mensajeConfirmacionDestructiva estadoConfirmacionDestructiva"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-confirmacion-destructiva-dialogo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="tituloConfirmacionDestructiva">
+                    Confirmar acción
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Cerrar confirmación"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="confirmacion-destructiva-icono" aria-hidden="true">!</div>
+                    <div class="flex-grow-1">
+                        <p id="mensajeConfirmacionDestructiva" class="mb-3"></p>
+                        <p id="estadoConfirmacionDestructiva"
+                           class="confirmacion-destructiva-estado small mb-0"
+                           aria-live="polite"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-confirmacion-cancelar data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger"
+                        data-confirmacion-aceptar disabled>
+                    <span data-confirmacion-accion>Confirmar</span>
+                    <span data-confirmacion-contador aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

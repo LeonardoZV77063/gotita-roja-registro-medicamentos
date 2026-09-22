@@ -1,0 +1,331 @@
+@model SistemaDonaciones.Web.Models.ViewModels.DashboardPorcentajesViewModel
+@{
+    ViewData["Title"] = "Tablero de Porcentajes";
+
+    // Un canvas no expone contenido accesible; cada gráfico recibe un resumen.
+    string Resumen<T>(string titulo, IList<string> etiquetas, IList<T> valores) =>
+        etiquetas.Count == 0
+            ? $"{titulo}: sin datos en el período."
+            : $"{titulo}: " + string.Join("; ", etiquetas.Select((e, i) => $"{e} {valores[i]}")) + ".";
+
+    var periodoValido = ViewData.ModelState.IsValid;
+}
+
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+    <div>
+        <h1 class="h3 mb-1">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">Estadísticas gráficas de atenciones, demografía y procedencia.</p>
+    </div>
+    <a asp-action="MapaDeCalor" class="btn btn-outline-danger align-self-start align-self-md-end">
+        <span aria-hidden="true">🗺️</span> Mapa Epidemiológico
+    </a>
+</div>
+
+<div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label asp-for="Desde" class="form-label fw-bold"></label>
+                        <input asp-for="Desde" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Hasta" class="form-label fw-bold"></label>
+                        <input asp-for="Hasta" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-principal w-100">
+                            Aplicar Filtro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 tarjeta-impacto text-white text-center shadow-sm">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5 class="card-title mb-1 text-uppercase fw-bold" style="letter-spacing: 1px;">Impacto Económico</h5>
+                <p class="small mb-2" style="opacity: 0.85;">Dinero ahorrado a la comunidad en este período</p>
+                <h2 class="display-6 fw-bold mb-0">Bs. @Model.MontoTotalAhorrado.ToString("N2")</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (periodoValido)
+{
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Evolución Mensual (Atenciones)</div>
+            <div class="card-body">
+                @if (Model.MesLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoMes" style="max-height: 250px;" role="img"
+                            aria-label="@Resumen("Evolución mensual de atenciones", Model.MesLabels, Model.MesValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Sexo</div>
+            <div class="card-body d-flex justify-content-center">
+                @if (Model.SexoLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoSexo" style="max-height: 250px;" role="img"
+                            aria-label="@Resumen("Pacientes por sexo", Model.SexoLabels, Model.SexoValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Grupo Etario</div>
+            <div class="card-body d-flex justify-content-center">
+                @if (Model.EdadLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoEdad" style="max-height: 250px;" role="img"
+                            aria-label="@Resumen("Pacientes por grupo etario", Model.EdadLabels, Model.EdadValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Condición del Paciente</div>
+            <div class="card-body d-flex justify-content-center">
+                @if (Model.CondicionLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoCondicion" style="max-height: 250px;" role="img"
+                            aria-label="@Resumen("Pacientes por condición", Model.CondicionLabels, Model.CondicionValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Top 5 Medicamentos Donados (Unidades)</div>
+            <div class="card-body">
+                @if (Model.TopMedicamentosNombres.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoMedicamentos" style="max-height: 300px;" role="img"
+                            aria-label="@Resumen("Medicamentos más donados, en unidades", Model.TopMedicamentosNombres, Model.TopMedicamentosCantidades)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Diagnósticos más atendidos</div>
+            <div class="card-body">
+                @if (Model.DiagnosticoLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoDiagnostico" style="max-height: 300px;" role="img"
+                            aria-label="@Resumen("Pacientes por diagnóstico", Model.DiagnosticoLabels, Model.DiagnosticoValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Departamento de origen</div>
+            <div class="card-body d-flex justify-content-center">
+                @if (Model.DepartamentoLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoDepartamento" style="max-height: 300px;" role="img"
+                            aria-label="@Resumen("Pacientes por departamento de origen", Model.DepartamentoLabels, Model.DepartamentoValues)"></canvas>
+                }
+            </div>
+            @if (Model.AtencionesPorResidencia > 0 || Model.AtencionesDelExterior > 0)
+            {
+                <div class="card-footer bg-white small text-muted">
+                    @if (Model.AtencionesPorResidencia > 0)
+                    {
+                        <text>
+                            @Model.AtencionesPorResidencia atención(es) se ubicaron por
+                            donde vive el paciente, porque su ficha todavía no dice de
+                            dónde es.
+                        </text>
+                    }
+                    @if (Model.AtencionesDelExterior > 0)
+                    {
+                        <text>
+                            @Model.AtencionesDelExterior son de pacientes de otros países
+                            y no entran en este gráfico.
+                        </text>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Municipios de origen más frecuentes</div>
+            <div class="card-body">
+                @if (Model.MunicipioLabels.Count == 0)
+                {
+                    <p class="text-muted small mb-0 align-self-center">Sin datos en el período.</p>
+                }
+                else
+                {
+                    <canvas id="graficoMunicipio" style="max-height: 300px;" role="img"
+                            aria-label="@Resumen("Municipios con más pacientes", Model.MunicipioLabels, Model.MunicipioValues)"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+
+@section Scripts {
+    @* La versión exacta evita cambios incompatibles no revisados. *@
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            if (typeof Chart === "undefined") return;
+
+            var estilosTema = getComputedStyle(document.documentElement);
+            function colorTema(nombre) {
+                return estilosTema.getPropertyValue(nombre).trim();
+            }
+
+            var colorSeparadorGrafico = colorTema('--color-superficie');
+            Chart.defaults.color = colorTema('--color-texto-suave');
+            Chart.defaults.borderColor = colorTema('--color-borde');
+
+            function createChart(canvasId, type, labels, data, bgColor, title, extraOptions = {}) {
+                var canvas = document.getElementById(canvasId);
+                if (!canvas || data.length === 0) return;
+                var ctx = canvas.getContext('2d');
+                
+                var baseOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: type === 'pie' || type === 'doughnut', position: 'bottom' } }
+                };
+
+                if (type === 'bar' && extraOptions.indexAxis === 'y') {
+                    baseOptions.scales = { x: { beginAtZero: true } };
+                } else if (type === 'bar' || type === 'line') {
+                    baseOptions.scales = { y: { beginAtZero: true } };
+                }
+
+                var options = Object.assign(baseOptions, extraOptions);
+
+                new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: title,
+                            data: data,
+                            backgroundColor: bgColor,
+                            borderColor: type === 'line'
+                                ? bgColor
+                                : (type === 'pie' || type === 'doughnut' ? colorSeparadorGrafico : undefined),
+                            borderWidth: type === 'pie' || type === 'doughnut' ? 2 : undefined,
+                            fill: type === 'line' ? false : undefined,
+                            tension: type === 'line' ? 0.1 : undefined
+                        }]
+                    },
+                    options: options
+                });
+            }
+
+            var colors = [
+                colorTema('--color-grafico-1'),
+                colorTema('--color-grafico-2'),
+                colorTema('--color-grafico-3'),
+                colorTema('--color-grafico-4'),
+                colorTema('--color-grafico-5'),
+                colorTema('--color-grafico-6'),
+                colorTema('--color-grafico-7')
+            ];
+
+            createChart('graficoMes', 'line', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MesLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MesValues)), 
+                colors[0], 'Atenciones');
+
+            createChart('graficoSexo', 'pie', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SexoLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SexoValues)), 
+                [colors[0], colors[1]], 'Pacientes');
+
+            createChart('graficoEdad', 'doughnut', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EdadLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EdadValues)), 
+                colors, 'Pacientes');
+
+            createChart('graficoCondicion', 'pie', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CondicionLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CondicionValues)), 
+                colors, 'Pacientes');
+
+            createChart('graficoMedicamentos', 'bar', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopMedicamentosNombres)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopMedicamentosCantidades)), 
+                colors[3], 'Unidades', { indexAxis: 'y' });
+
+            createChart('graficoDiagnostico', 'bar', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DiagnosticoLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DiagnosticoValues)), 
+                colors[4], 'Pacientes', { indexAxis: 'y' });
+
+            createChart('graficoDepartamento', 'doughnut', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartamentoLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartamentoValues)), 
+                colors, 'Pacientes');
+
+            createChart('graficoMunicipio', 'bar', 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MunicipioLabels)), 
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MunicipioValues)), 
+                colors[2], 'Pacientes');
+        });
+    </script>
+}

@@ -1,0 +1,119 @@
+@model KardexViewModel
+@{
+    ViewData["Title"] = "Kardex";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Kardex de medicamentos</h1>
+    <p class="text-muted mb-0">
+        Todos los movimientos de un medicamento: lo que entró, lo que se donó y
+        a qué precio.
+    </p>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+        <form asp-action="Kardex" method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label" for="idMedicamentoKardex">Medicamento</label>
+                <select id="idMedicamentoKardex" name="idMedicamento" class="form-select">
+                    <option value="">— Seleccione —</option>
+                    @foreach (var m in Model.Medicamentos)
+                    {
+                        <option value="@m.IdMedicamento"
+                                selected="@(Model.IdMedicamento == m.IdMedicamento)">
+                            @m.Nombre
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Desde" class="form-label"></label>
+                <input asp-for="Desde" type="date" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Hasta" class="form-label"></label>
+                <input asp-for="Hasta" type="date" class="form-control" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-principal w-100">Ver</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.IdMedicamento.HasValue && ViewData.ModelState.IsValid)
+{
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="panel-dato">
+                <div class="etiqueta">Total ingresado</div>
+                <div class="cifra">@Model.TotalIngresos.ToString("0.##")</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-dato">
+                <div class="etiqueta">Total entregado</div>
+                <div class="cifra">@Model.TotalSalidas.ToString("0.##")</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-dato">
+                <div class="etiqueta">Valor neto</div>
+                <div class="cifra">@Model.ValorNeto.ToString("N0") <small class="fs-6">Bs</small></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">@Model.NombreMedicamento</div>
+        <div class="table-responsive">
+            <table class="table tabla-compacta mb-0">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Movimiento</th>
+                    <th>Concepto</th>
+                    <th class="numero">Cantidad</th>
+                    <th class="numero">Costo unit.</th>
+                    <th class="numero">Valor (Bs)</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var m in Model.Movimientos)
+                {
+                    <tr>
+                        <td>@m.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="badge @(m.EsIngreso ? "insignia-fifo" : m.EsAnulacion ? "bg-danger" : "insignia-manual")">
+                                @m.Movimiento
+                            </span>
+                        </td>
+                        <td class="small">@m.Concepto</td>
+                        <td class="numero">@m.Cantidad.ToString("0.##")</td>
+                        <td class="numero">@m.CostoUnitario.ToString("N2")</td>
+                        <td class="numero">@m.Valor.ToString("N2")</td>
+                    </tr>
+                }
+                @if (Model.Movimientos.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No hay movimientos en el período seleccionado.
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else if (ViewData.ModelState.IsValid)
+{
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+            Seleccione un medicamento para ver sus movimientos.
+        </div>
+    </div>
+}

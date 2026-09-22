@@ -1,0 +1,147 @@
+@model AnulacionLoteViewModel
+@{
+    ViewData["Title"] = "Anular ingreso";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Anular el ingreso de @Model.Medicamento</h1>
+    <p class="text-muted mb-0">
+        Del @Model.FechaIngreso.ToString("dd/MM/yyyy") ·
+        @Model.CantidadIngresada.ToString("0.##") unidades a
+        @Model.CostoUnitario.ToString("N2") Bs cada una
+    </p>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-warning small">
+                    El ingreso <strong>no se borra</strong>. Queda registrado como
+                    anulado, con el motivo, la fecha y quién lo anuló, porque el
+                    archivo que respalda una auditoría no puede tener huecos.
+                </div>
+
+                <p class="small">
+                    Al anularlo salen del inventario
+                    <strong>@Model.CantidadDisponible.ToString("0.##") unidades</strong>
+                    por <strong>@Model.ValorQueSale.ToString("N2") Bs</strong>.
+                    Si esas unidades siguen en el depósito, regístrelas después como
+                    un ingreso nuevo con el costo correcto.
+                </p>
+
+                <p class="small mb-0">
+                    La baja no se deshace desde el sistema. Si se equivoca, el camino
+                    es registrar de nuevo el ingreso con los datos correctos: queda
+                    como otro lote, y en la bitácora consta lo que pasó con los dos.
+                </p>
+
+                @if (Model.TieneSalidas)
+                {
+                    @* Las salidas conservan su costo histórico; se listan para
+                       evaluar el impacto antes de anular el lote. *@
+                    <div class="alert alert-danger small mb-0">
+                        <strong>De este lote ya salieron medicamentos.</strong>
+                        Las @Model.Salidas.Count entregas de la derecha conservan el
+                        costo que tenían al hacerse: anular el ingreso no las
+                        cambia, y no debería, porque sus comprobantes ya están
+                        impresos. Si alguna quedó con un monto equivocado, hay que
+                        anular esa entrega desde su propia pantalla.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <form asp-action="Anular" method="post"
+                      data-confirmacion-destructiva
+                      data-confirmacion-titulo="Confirmar anulación de lote"
+                      data-confirmacion-mensaje="¿Desea confirmar los cambios y anular este lote? Las unidades disponibles saldrán del inventario y esta acción no se puede deshacer desde el sistema."
+                      data-confirmacion-accion="Sí, anular lote">
+                    @* El servidor relee el lote para no confiar en valores
+                       reenviados por el cliente. *@
+                    <input type="hidden" asp-for="IdLote" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Motivo" class="form-label obligatorio"></label>
+                        <textarea asp-for="Motivo" class="form-control" rows="3"
+                                  maxlength="200" data-foco-inicial
+                                  placeholder="Por ejemplo: se cargó el costo total de la factura en la casilla del costo por unidad."></textarea>
+                        <div class="ayuda-campo">
+                            Lo va a leer quien revise el inventario dentro de seis meses.
+                        </div>
+                        <span asp-validation-for="Motivo" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger"
+                            data-confirmar="¿Confirma la anulación de este ingreso?">
+                        Anular el ingreso
+                    </button>
+                    <a class="btn btn-link" asp-action="Lotes" asp-route-id="@Model.IdMedicamento">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                Entregas hechas con este lote
+                @if (Model.TieneSalidas)
+                {
+                    <span class="badge bg-secondary">@Model.Salidas.Count</span>
+                }
+            </div>
+            @if (Model.TieneSalidas)
+            {
+                <div class="table-responsive">
+                    <table class="table tabla-compacta mb-0">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Formulario</th>
+                            <th>Paciente</th>
+                            <th class="numero">Unid.</th>
+                            <th class="numero">Bs</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var s in Model.Salidas)
+                        {
+                            <tr>
+                                <td>@s.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <a asp-controller="Atenciones" asp-action="Detalle"
+                                       asp-route-id="@s.IdAtencion">@s.NumeroFormulario</a>
+                                </td>
+                                <td class="small">@s.Paciente</td>
+                                <td class="numero">@s.Cantidad.ToString("0.##")</td>
+                                <td class="numero">@s.Subtotal.ToString("N2")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="card-body">
+                    <p class="text-muted small mb-0">
+                        Ninguna. Nada de lo que hay registrado depende de este ingreso,
+                        así que en lugar de anularlo también puede
+                        <a asp-action="Editar" asp-route-id="@Model.IdLote">corregirlo</a>.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,131 @@
+@model BusquedaPacienteViewModel
+@{
+    ViewData["Title"] = "Atender paciente";
+
+    // Sólo un criterio numérico se ofrece como carnet del paciente nuevo: un
+    // apellido precargado en el campo del carnet fallaría la validación.
+    var criterioEsCarnet = !string.IsNullOrWhiteSpace(Model.Criterio)
+                           && Model.Criterio.Trim().All(char.IsDigit);
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Atender a un paciente</h1>
+    <p class="text-muted mb-0">
+        Busque por carnet de identidad o apellido. Si ya está registrado, no hace
+        falta volver a escanear su carnet.
+    </p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label asp-for="Criterio" class="form-label"></label>
+                <input asp-for="Criterio" class="form-control form-control-lg"
+                       maxlength="80" autocomplete="off"
+                       placeholder="Ej.: 4567890 o Pérez" data-foco-inicial />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-principal btn-lg w-100">Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.CriterioInvalido)
+{
+    <div class="alert alert-warning" role="status">
+        La búsqueda no contiene letras ni números que se puedan buscar. Escriba el
+        carnet, un nombre o un apellido.
+    </div>
+}
+else if (Model.SinResultados)
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <p class="mb-3">
+                No se encontró ningún paciente con <strong>@Model.Criterio</strong>.
+            </p>
+            <a class="btn btn-principal"
+               asp-action="Crear" asp-route-documento="@(criterioEsCarnet ? Model.Criterio!.Trim() : null)">
+                Registrar paciente nuevo
+            </a>
+        </div>
+    </div>
+}
+else if (Model.Resultados.Count > 0)
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>@Model.Resultados.Count resultado(s)</span>
+            <a class="btn btn-sm btn-outline-principal" asp-action="Crear">
+                Registrar paciente nuevo
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table tabla-compacta mb-0 align-middle">
+                <thead>
+                <tr>
+                    <th>Carnet</th>
+                    <th>Paciente</th>
+                    <th class="numero">Edad</th>
+                    <th>Sexo</th>
+                    <th class="numero">Visitas</th>
+                    <th>Última</th>
+                    <th>Carnet cargado</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var p in Model.Resultados)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            @p.NumeroDocumento@(string.IsNullOrWhiteSpace(p.ComplementoDoc)
+                                ? "" : "-" + p.ComplementoDoc)
+                        </td>
+                        <td>
+                            <a asp-action="Ficha" asp-route-id="@p.IdPaciente">
+                                @p.NombreCompleto
+                            </a>
+                        </td>
+                        <td class="numero">@p.Edad</td>
+                        <td>@p.Sexo</td>
+                        <td class="numero">@p.TotalAtenciones</td>
+                        <td>@(p.UltimaAtencion?.ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>
+                            @if (p.TieneCarnetCargado)
+                            {
+                                <a class="badge text-decoration-none insignia-fifo"
+                                   asp-controller="Archivos" asp-action="Ver"
+                                   asp-route-id="@p.IdArchivoCarnet" target="_blank">
+                                    Ver carnet
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="badge insignia-manual">Falta cargar</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-principal"
+                               asp-controller="Atenciones" asp-action="Crear"
+                               asp-route-idPaciente="@p.IdPaciente">
+                                Nueva entrega
+                            </a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body py-5 text-center text-muted">
+            Escriba el carnet o el apellido del paciente para comenzar.
+        </div>
+    </div>
+}

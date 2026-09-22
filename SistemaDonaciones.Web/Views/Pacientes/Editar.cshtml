@@ -1,0 +1,31 @@
+@model PacienteFormViewModel
+@{
+    ViewData["Title"] = "Editar paciente";
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Editar paciente</h1>
+    <p class="text-muted mb-0">
+        Al subir un carnet nuevo, el anterior no se borra: queda en el historial
+        para poder auditar las entregas hechas con el documento anterior.
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Editar" method="post" enctype="multipart/form-data">
+            <partial name="_Formulario" model="Model" />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-principal">Guardar cambios</button>
+                <a class="btn btn-link" asp-action="Ficha" asp-route-id="@Model.IdPaciente">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

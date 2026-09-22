@@ -1,0 +1,194 @@
+@using System.Text.Json
+@model List<Bitacora>
+@{
+    ViewData["Title"] = "Bitácora";
+    var pagina = (int)ViewBag.Pagina;
+    var totalPaginas = (int)ViewBag.TotalPaginas;
+    var total = (int)ViewBag.Total;
+}
+@functions {
+    public Dictionary<string, string> LeerDatos(string? json)
+    {
+        var resultado = new Dictionary<string, string>();
+
+        if (string.IsNullOrWhiteSpace(json))
+            return resultado;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+
+            foreach (var propiedad in doc.RootElement.EnumerateObject())
+            {
+                var valor = propiedad.Value.ValueKind switch
+                {
+                    JsonValueKind.Null => "—",
+                    JsonValueKind.True => "Sí",
+                    JsonValueKind.False => "No",
+                    _ => propiedad.Value.ToString()
+                };
+
+                resultado[propiedad.Name] = valor;
+            }
+        }
+        catch
+        {
+            resultado["Detalle"] = json;
+        }
+
+        return resultado;
+    }
+
+    public string NombreCampo(string campo)
+    {
+        return campo switch
+        {
+            "IdMedicamento" => "Medicamento",
+            "IdTipoIngreso" => "Tipo de ingreso",
+            "NumeroLote" => "N.º de lote",
+            "FechaIngreso" => "Fecha de ingreso",
+            "FechaVencimiento" => "Fecha de vencimiento",
+            "CantidadIngresada" => "Cantidad ingresada",
+            "CantidadDisponible" => "Cantidad disponible",
+            "CostoUnitario" => "Costo unitario",
+            "Origen" => "Origen",
+            "NumeroFactura" => "N.º de factura",
+
+            "NumeroDocumento" => "Carnet",
+            "ComplementoDoc" => "Complemento",
+            "ExtensionDoc" => "Extensión",
+            "Nombres" => "Nombres",
+            "ApellidoPaterno" => "Apellido paterno",
+            "ApellidoMaterno" => "Apellido materno",
+            "FechaNacimiento" => "Fecha de nacimiento",
+            "IdSexo" => "Sexo",
+            "Telefono" => "Teléfono",
+            "Observaciones" => "Observaciones",
+            "Activo" => "Activo",
+
+            "NombreUsuario" => "Usuario",
+            "NombreCompleto" => "Nombre completo",
+            "Email" => "Correo",
+            "IdRol" => "Rol",
+
+            "Nombre" => "Nombre",
+            "FechaAlta" => "Fecha de alta",
+
+            _ => campo
+        };
+    }
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Bitácora de auditoría</h1>
+    <p class="text-muted mb-0">
+        @total movimiento(s) registrados. Los escriben los triggers de la base de
+        datos: ninguna alta ni modificación de una entrega puede pasar sin quedar
+        anotada acá.
+    </p>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0">
+            <thead>
+            <tr>
+                <th>Fecha y hora</th>
+                <th>Usuario</th>
+                <th>Tabla</th>
+                <th>Registro</th>
+                <th>Acción</th>
+                <th>Detalle</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var b in Model)
+            {
+                <tr>
+                    <td class="small">@b.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <td class="small">@(b.Usuario?.NombreCompleto ?? "—")</td>
+                    <td class="small">@b.TablaAfectada</td>
+                    <td class="numero small">@b.IdRegistroAfectado</td>
+                    @{
+                        var accion = b.Accion.Trim();
+                        var claseAccion = accion == "INSERT" ? "insignia-fifo"
+                            : accion == "UPDATE" ? "insignia-manual"
+                            : "bg-danger";
+                    }
+                    <td>
+                        <span class="badge @claseAccion">@accion</span>
+                    </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(b.DatosNuevos))
+                            {
+                                var nuevos = LeerDatos(b.DatosNuevos);
+                                var anteriores = LeerDatos(b.DatosAnteriores);
+
+                                <details>
+                                    <summary class="small text-muted" style="cursor:pointer;">
+                                        Ver datos
+                                    </summary>
+
+                                    @if (anteriores.Count > 0)
+                                    {
+                                        <div class="mt-2 mb-1 fw-bold small">
+                                            Antes
+                                        </div>
+
+                                        <div class="small">
+                                            @foreach (var dato in anteriores)
+                                            {
+                                                <div>
+                                                    <strong>@NombreCampo(dato.Key):</strong>
+                                                    @dato.Value
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <hr class="my-2" />
+
+                                        <div class="mb-1 fw-bold small">
+                                            Después
+                                        </div>
+                                    }
+
+                                    <div class="small">
+                                        @foreach (var dato in nuevos)
+                                        {
+                                            <div>
+                                                <strong>@NombreCampo(dato.Key):</strong>
+                                                @dato.Value
+                                            </div>
+                                        }
+                                    </div>
+                                </details>
+                            }
+                        </td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        La bitácora está vacía.
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (totalPaginas > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination pagination-sm justify-content-center flex-wrap">
+            @for (var i = Math.Max(1, pagina - 5); i <= Math.Min(totalPaginas, pagina + 5); i++)
+            {
+                <li class="page-item @(i == pagina ? "active" : "")">
+                    <a class="page-link" asp-action="Bitacora" asp-route-pagina="@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

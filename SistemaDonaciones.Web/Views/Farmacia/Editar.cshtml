@@ -1,0 +1,125 @@
+@model EdicionLoteViewModel
+@{
+    ViewData["Title"] = "Corregir ingreso";
+    var hoyIso = DateTime.Today.ToString("yyyy-MM-dd");
+    var ingresoMinimoIso = ServicioFarmacia.IngresoMinimo.ToString("yyyy-MM-dd");
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Corregir ingreso de @Model.Medicamento</h1>
+    <p class="text-muted mb-0">
+        De este ingreso todavía no salió ninguna unidad, así que se puede corregir
+        sin que cambie ninguna entrega ya registrada.
+    </p>
+</div>
+
+<div class="alert alert-warning">
+    <strong>Así está cargado hoy:</strong>
+    @Model.CantidadIngresada.ToString("0.##") unidades a
+    @Model.CostoUnitario.ToString("N2") Bs cada una, es decir
+    <strong>@Model.ValorOriginal.ToString("N2") Bs</strong> de inventario.
+    Si ese total no es el de la factura, lo más probable es que el costo por
+    unidad tenga escrito el total de la compra.
+</div>
+
+<div class="card" style="max-width: 46rem;">
+    <div class="card-body">
+        <form asp-action="Editar" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            @* Cambiar el medicamento representa otro ingreso; el servidor relee
+               la relación original a partir del identificador del lote. *@
+            <input type="hidden" asp-for="IdLote" />
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Medicamento</label>
+                    <input class="form-control" value="@Model.Medicamento" disabled />
+                    <div class="ayuda-campo">
+                        No se puede cambiar. Si el medicamento es otro, anule este
+                        ingreso y registre el correcto.
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdTipoIngreso" class="form-label obligatorio"></label>
+                    <select asp-for="IdTipoIngreso" class="form-select">
+                        <option value="">— Seleccione —</option>
+                        @foreach (var t in Model.TiposIngreso)
+                        {
+                            <option value="@t.IdTipoIngreso">@t.Descripcion</option>
+                        }
+                    </select>
+                    <span asp-validation-for="IdTipoIngreso" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="CantidadIngresada" class="form-label obligatorio"></label>
+                    <input asp-for="CantidadIngresada" type="number" step="0.01" min="0.01"
+                           class="form-control" data-foco-inicial />
+                    <span asp-validation-for="CantidadIngresada" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="CostoUnitario" class="form-label obligatorio"></label>
+                    <input asp-for="CostoUnitario" type="number" step="0.01" min="0"
+                           class="form-control" />
+                    <div class="ayuda-campo">
+                        Precio de <strong>una</strong> unidad, no el total de la compra.
+                    </div>
+                    <span asp-validation-for="CostoUnitario" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="FechaIngreso" class="form-label obligatorio"></label>
+                    <input asp-for="FechaIngreso" type="date" class="form-control"
+                           min="@ingresoMinimoIso" max="@hoyIso" />
+                    <span asp-validation-for="FechaIngreso" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="FechaVencimiento" class="form-label"></label>
+                    <input asp-for="FechaVencimiento" type="date" class="form-control"
+                           data-fecha-posterior-a="#FechaIngreso" />
+                    <span asp-validation-for="FechaVencimiento" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="NumeroLote" class="form-label"></label>
+                    <input asp-for="NumeroLote" class="form-control" maxlength="40" />
+                    <span asp-validation-for="NumeroLote" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="Origen" class="form-label"></label>
+                    <input asp-for="Origen" class="form-control" maxlength="120"
+                           placeholder="Farmacia, empresa donante, particular…" />
+                    <span asp-validation-for="Origen" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="NumeroFactura" class="form-label"></label>
+                    <input asp-for="NumeroFactura" class="form-control" maxlength="40" />
+                    <span asp-validation-for="NumeroFactura" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <button type="submit" class="btn btn-principal"
+                    data-confirmar="¿Confirma la corrección de este ingreso?">
+                Guardar la corrección
+            </button>
+            <a class="btn btn-link" asp-action="Lotes" asp-route-id="@Model.IdMedicamento">
+                Cancelar
+            </a>
+            <a class="btn btn-link text-danger" asp-action="Anular" asp-route-id="@Model.IdLote">
+                Anular el ingreso
+            </a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,417 @@
+@model PacienteFormViewModel
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+<input type="hidden" asp-for="IdPaciente" />
+
+<div class="seccion-formulario">
+    <h2>Identificación</h2>
+    <p class="ayuda-campo mb-0">
+        El carnet identifica al paciente en todo el sistema. Si ya existe, el
+        sistema no permitirá crearlo de nuevo.
+    </p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label asp-for="NumeroDocumento" class="form-label obligatorio"></label>
+        @* data-filtro replica la regla del modelo; pattern sigue validando si
+           JavaScript no carga. *@
+        <input asp-for="NumeroDocumento" class="form-control" data-foco-inicial
+               data-filtro="digitos" inputmode="numeric" autocomplete="off"
+               pattern="[0-9]+" maxlength="20" title="Ingrese solo números" />
+        <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="ComplementoDoc" class="form-label"></label>
+        <input asp-for="ComplementoDoc" class="form-control" maxlength="5"
+               data-filtro="alfanumerico" data-filtro-mayusculas="true" autocomplete="off"
+               pattern="[0-9A-Za-z]+" title="Solo letras y números, sin espacios" />
+        <span asp-validation-for="ComplementoDoc" class="text-danger small"></span>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="ExtensionDoc" class="form-label"></label>
+        <input asp-for="ExtensionDoc" class="form-control" maxlength="5"
+               data-filtro="soloLetras" data-filtro-mayusculas="true" autocomplete="off"
+               pattern="[A-Za-z]+" title="Solo letras, sin espacios"
+               placeholder="LP, SC…" />
+        <span asp-validation-for="ExtensionDoc" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="seccion-formulario">
+    <h2>Datos personales</h2>
+    <p class="ayuda-campo mb-0">
+        La edad no se guarda: el sistema la calcula desde la fecha de nacimiento,
+        para que nunca quede vieja.
+    </p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label asp-for="Nombres" class="form-label obligatorio"></label>
+        <input asp-for="Nombres" class="form-control" data-filtro="letras"
+               pattern="[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'\-]+" maxlength="80"
+               title="Solo letras, espacios, apóstrofo o guion" />
+        <span asp-validation-for="Nombres" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ApellidoPaterno" class="form-label obligatorio"></label>
+        <input asp-for="ApellidoPaterno" class="form-control" data-filtro="letras"
+               pattern="[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'\-]+" maxlength="60"
+               title="Solo letras, espacios, apóstrofo o guion" />
+        <span asp-validation-for="ApellidoPaterno" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ApellidoMaterno" class="form-label"></label>
+        <input asp-for="ApellidoMaterno" class="form-control" data-filtro="letras"
+               pattern="[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'\-]+" maxlength="60"
+               title="Solo letras, espacios, apóstrofo o guion" />
+        <span asp-validation-for="ApellidoMaterno" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="FechaNacimiento" class="form-label obligatorio"></label>
+        <input asp-for="FechaNacimiento" type="date" class="form-control"
+               max="@DateTime.Today.ToString("yyyy-MM-dd")"
+               data-calcula-edad="#edadCalculada" />
+        <div class="ayuda-campo">Edad: <strong id="edadCalculada"></strong></div>
+        <span asp-validation-for="FechaNacimiento" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="IdSexo" class="form-label obligatorio"></label>
+        <select asp-for="IdSexo" class="form-select">
+            <option value="">— Seleccione —</option>
+            @foreach (var sexo in Model.Sexos)
+            {
+                <option value="@sexo.IdSexo">@sexo.Descripcion</option>
+            }
+        </select>
+        <span asp-validation-for="IdSexo" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Telefono" class="form-label"></label>
+        <input asp-for="Telefono" class="form-control" data-filtro="telefono"
+               inputmode="tel" pattern="[\d\s\+\-]+" maxlength="20"
+               title="Solo números, espacios, + o -" />
+        <span asp-validation-for="Telefono" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Observaciones" class="form-label"></label>
+        <textarea asp-for="Observaciones" class="form-control" rows="2"></textarea>
+        <span asp-validation-for="Observaciones" class="text-danger small"></span>
+    </div>
+</div>
+
+
+<div class="seccion-formulario">
+    <h2>Dónde vive</h2>
+    <p class="ayuda-campo mb-0">
+        La ubicación donde se lo puede encontrar mientras dure el tratamiento.
+    </p>
+</div>
+
+@* Departamento y provincia sólo filtran el catálogo; se persiste el municipio,
+   que ya determina ambos niveles superiores. *@
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <label asp-for="IdDepartamento" class="form-label"></label>
+
+        <select asp-for="IdDepartamento"
+                class="form-select"
+                data-cascada="residencia"
+                data-nivel="departamento">
+
+            <option value="">— Seleccione departamento —</option>
+
+            @foreach (var departamento in Model.Departamentos)
+            {
+                <option value="@departamento.IdDepartamento">
+                    @departamento.Nombre
+                </option>
+            }
+
+        </select>
+
+        <span asp-validation-for="IdDepartamento"
+              class="text-danger small"></span>
+    </div>
+
+
+    <div class="col-md-4">
+        <label asp-for="IdProvincia" class="form-label"></label>
+
+        <select asp-for="IdProvincia"
+                class="form-select"
+                data-cascada="residencia"
+                data-nivel="provincia">
+
+            <option value="">— Seleccione provincia —</option>
+
+            @foreach (var provincia in Model.Provincias)
+            {
+                <option value="@provincia.IdProvincia"
+                        data-departamento="@provincia.IdDepartamento">
+                    @provincia.Nombre
+                </option>
+            }
+
+        </select>
+
+        <span asp-validation-for="IdProvincia"
+              class="text-danger small"></span>
+    </div>
+
+
+    <div class="col-md-4">
+        <label asp-for="IdMunicipio" class="form-label"></label>
+
+        <select asp-for="IdMunicipio"
+                class="form-select"
+                data-cascada="residencia"
+                data-nivel="municipio">
+
+            <option value="">— Seleccione municipio —</option>
+
+            @foreach (var municipio in Model.Municipios)
+            {
+                <option value="@municipio.IdMunicipio"
+                        data-provincia="@municipio.IdProvincia">
+                    @municipio.Nombre
+                </option>
+            }
+
+        </select>
+
+        <span asp-validation-for="IdMunicipio"
+              class="text-danger small"></span>
+    </div>
+
+
+    @* Direccion conserva la referencia libre y sirve como compatibilidad para
+       fichas anteriores sin campos estructurados. *@
+    <div class="col-md-5">
+        <label asp-for="Zona" class="form-label"></label>
+
+        <input asp-for="Zona" class="form-control" maxlength="120"
+               placeholder="Barrio Primero de Mayo, Villa Fátima..." />
+
+        <span asp-validation-for="Zona" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-5">
+        <label asp-for="Calle" class="form-label"></label>
+
+        <input asp-for="Calle" class="form-control" maxlength="120"
+               placeholder="Av. Banzer, calle Los Tajibos..." />
+
+        <span asp-validation-for="Calle" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="NumeroDomicilio" class="form-label"></label>
+
+        <input asp-for="NumeroDomicilio" class="form-control" maxlength="20"
+               autocomplete="off" />
+
+        <span asp-validation-for="NumeroDomicilio" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Direccion" class="form-label"></label>
+
+        <input asp-for="Direccion"
+               class="form-control"
+               placeholder="Casa de dos pisos, portón verde, frente a la plaza..." />
+
+        <div class="ayuda-campo">
+            Lo que ayude a encontrar la casa y no entre en los campos de arriba.
+        </div>
+
+        <span asp-validation-for="Direccion"
+              class="text-danger small"></span>
+    </div>
+
+</div>
+
+
+<div class="seccion-formulario">
+    <h2>De dónde es</h2>
+    <p class="ayuda-campo mb-0">
+        El mapa y las estadísticas cuentan a cada paciente por este lugar, no por
+        donde vive hoy: quien vino de Potosí a tratarse en Santa Cruz sigue
+        siendo un caso de Potosí. Mientras quede vacío se lo cuenta por su
+        residencia, y el reporte avisa cuántos se contaron así. Quien viene de
+        otro país se cuenta aparte: el mapa es de Bolivia.
+    </p>
+</div>
+
+@* El catálogo territorial es boliviano. Para un país extranjero se deshabilita
+   el fieldset, de modo que sus campos no viajan en el formulario. *@
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <label asp-for="IdPaisOrigen" class="form-label"></label>
+
+        <select asp-for="IdPaisOrigen" class="form-select"
+                data-abre-bloque="#origenBolivia">
+
+            @* Sin país seleccionado se mantiene visible el bloque para completar
+               un origen local. *@
+            <option value="" data-abre="1">— Seleccione país —</option>
+
+            @foreach (var pais in Model.Paises)
+            {
+                <option value="@pais.IdPais" data-abre="@(pais.EsLocal ? "1" : "0")">
+                    @pais.Nombre
+                </option>
+            }
+
+        </select>
+
+        <span asp-validation-for="IdPaisOrigen" class="text-danger small"></span>
+    </div>
+</div>
+
+<fieldset id="origenBolivia" class="border-0 p-0 m-0">
+
+    @* El fieldset deshabilitado no envía sus campos; el servidor copia la
+       residencia al origen. *@
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox"
+               asp-for="OrigenIgualQueResidencia"
+               data-desactiva="#camposOrigen" />
+        <label class="form-check-label" asp-for="OrigenIgualQueResidencia"></label>
+    </div>
+
+<fieldset id="camposOrigen" class="border-0 p-0 m-0 mb-4">
+    <div class="row g-3">
+
+        <div class="col-md-4">
+            <label asp-for="IdDepartamentoOrigen" class="form-label"></label>
+
+            <select asp-for="IdDepartamentoOrigen"
+                    class="form-select"
+                    data-cascada="origen"
+                    data-nivel="departamento">
+
+                <option value="">— Seleccione departamento —</option>
+
+                @foreach (var departamento in Model.Departamentos)
+                {
+                    <option value="@departamento.IdDepartamento">
+                        @departamento.Nombre
+                    </option>
+                }
+
+            </select>
+
+            <span asp-validation-for="IdDepartamentoOrigen"
+                  class="text-danger small"></span>
+        </div>
+
+
+        <div class="col-md-4">
+            <label asp-for="IdProvinciaOrigen" class="form-label"></label>
+
+            <select asp-for="IdProvinciaOrigen"
+                    class="form-select"
+                    data-cascada="origen"
+                    data-nivel="provincia">
+
+                <option value="">— Seleccione provincia —</option>
+
+                @foreach (var provincia in Model.Provincias)
+                {
+                    <option value="@provincia.IdProvincia"
+                            data-departamento="@provincia.IdDepartamento">
+                        @provincia.Nombre
+                    </option>
+                }
+
+            </select>
+
+            <span asp-validation-for="IdProvinciaOrigen"
+                  class="text-danger small"></span>
+        </div>
+
+
+        <div class="col-md-4">
+            <label asp-for="IdMunicipioOrigen" class="form-label"></label>
+
+            <select asp-for="IdMunicipioOrigen"
+                    class="form-select"
+                    data-cascada="origen"
+                    data-nivel="municipio">
+
+                <option value="">— Seleccione municipio —</option>
+
+                @foreach (var municipio in Model.Municipios)
+                {
+                    <option value="@municipio.IdMunicipio"
+                            data-provincia="@municipio.IdProvincia">
+                        @municipio.Nombre
+                    </option>
+                }
+
+            </select>
+
+            <span asp-validation-for="IdMunicipioOrigen"
+                  class="text-danger small"></span>
+        </div>
+
+    </div>
+</fieldset>
+
+</fieldset>
+
+<div class="seccion-formulario">
+    <h2>Carnet escaneado</h2>
+    <p class="ayuda-campo mb-0">
+        Se carga una sola vez. En las visitas siguientes el sistema lo muestra
+        para verificar la identidad, sin volver a escanearlo.
+    </p>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <label asp-for="ArchivoCarnet" class="form-label @(Model.EsNuevo ? "" : "")"></label>
+        <input asp-for="ArchivoCarnet" type="file" class="form-control"
+               accept="image/jpeg,image/png,image/webp,application/pdf" />
+        <div class="ayuda-campo">
+            JPG, PNG, WEBP o PDF, hasta 10 MB.
+            @if (!Model.EsNuevo)
+            {
+                <text>Déjelo vacío si el carnet no cambió.</text>
+            }
+        </div>
+        <span asp-validation-for="ArchivoCarnet" class="text-danger small"></span>
+    </div>
+
+    @if (Model.CarnetVigente is not null)
+    {
+        <div class="col-md-6">
+            <div class="marco-documento">
+                <div class="small text-muted mb-2">Carnet vigente</div>
+                @if (Model.CarnetVigente.EsPdf)
+                {
+                    <a class="btn btn-sm btn-outline-principal"
+                       asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.CarnetVigente.IdArchivo" target="_blank">
+                        Abrir PDF
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.CarnetVigente.IdArchivo" target="_blank">
+                        <img class="miniatura-documento"
+                             src="@Url.Action("Ver", "Archivos", new { id = Model.CarnetVigente.IdArchivo })"
+                             alt="Carnet del paciente" />
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,546 @@
+@model AtencionFormViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Nueva entrega";
+    var urlSimular = Url.Action("SimularCosto", "Atenciones");
+    var hoyIso = DateTime.Today.ToString("yyyy-MM-dd");
+    var atencionMinimaIso = ServicioAtenciones.AtencionMinima.ToString("yyyy-MM-dd");
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Nueva entrega</h1>
+    @if (Model.Paciente is not null)
+    {
+        <p class="text-muted mb-0">
+            <strong>@Model.Paciente.NombreCompleto</strong> ·
+            carnet @Model.Paciente.DocumentoCompleto ·
+            @Model.Paciente.Edad años · @Model.Paciente.Sexo?.Descripcion
+        </p>
+    }
+</div>
+
+<form asp-action="Crear" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="IdPaciente" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header">Datos de la atención</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="NumeroFormulario" class="form-label obligatorio"></label>
+                            @* readonly permite enviar la vista previa; el servidor
+                               reserva el correlativo definitivo al guardar. *@
+                            <input asp-for="NumeroFormulario" class="form-control" readonly />
+                            <div class="ayuda-campo">
+                                Se asigna al guardar; si otra persona registra una entrega
+                                antes, puede ser el siguiente.
+                            </div>
+                            <span asp-validation-for="NumeroFormulario" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="FechaAtencion" class="form-label obligatorio"></label>
+                            <input asp-for="FechaAtencion" type="date" class="form-control"
+                                   min="@atencionMinimaIso" max="@hoyIso" />
+                            <span asp-validation-for="FechaAtencion" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="IdCondicion" class="form-label obligatorio"></label>
+                            <select asp-for="IdCondicion" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                @foreach (var c in Model.Condiciones)
+                                {
+                                    <option value="@c.IdCondicion">@c.Descripcion</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdCondicion" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label asp-for="IdDiagnostico"
+                                   class="form-label obligatorio"></label>
+
+                            <select asp-for="IdDiagnostico"
+                                    class="form-select"
+                                    id="IdDiagnostico">
+
+                                <option value="">— Seleccione diagnóstico —</option>
+
+                                @foreach (var diagnostico in Model.Diagnosticos)
+                                {
+                                    <option value="@diagnostico.IdDiagnostico">
+
+                                        @if (!string.IsNullOrWhiteSpace(diagnostico.CodigoCie10))
+                                        {
+                                            @($"{diagnostico.CodigoCie10} - {diagnostico.Descripcion}")
+                                        }
+                                        else
+                                        {
+                                            @diagnostico.Descripcion
+                                        }
+
+                                    </option>
+                                }
+
+                            </select>
+
+                            <div class="ayuda-campo">
+                                ¿No aparece?
+                                <a href="#" id="mostrarNuevoDiagnostico">Agregar un diagnóstico</a>
+                                a la lista sin salir de esta pantalla.
+                            </div>
+
+                            <span asp-validation-for="IdDiagnostico"
+                                  class="text-danger small"></span>
+
+                            @* El alta rápida conserva el formulario; el catálogo
+                               seleccionado sigue operativo si JavaScript no carga. *@
+                            <div id="nuevoDiagnostico" class="mt-2 p-2 border rounded" hidden>
+                                <div class="row g-2">
+                                    <div class="col-8">
+                                        <label class="form-label small mb-1">Diagnóstico</label>
+                                        <input type="text" id="nuevoDiagnosticoTexto"
+                                               class="form-control form-control-sm"
+                                               maxlength="160"
+                                               placeholder="Ej. Leucemia linfoblástica aguda" />
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small mb-1">CIE-10</label>
+                                        <input type="text" id="nuevoDiagnosticoCie"
+                                               class="form-control form-control-sm"
+                                               maxlength="10" placeholder="Opcional" />
+                                    </div>
+                                    <div class="col-12 d-flex gap-2 align-items-center">
+                                        <button type="button" id="guardarNuevoDiagnostico"
+                                                class="btn btn-sm btn-principal">
+                                            Agregar a la lista
+                                        </button>
+                                        <button type="button" id="cancelarNuevoDiagnostico"
+                                                class="btn btn-sm btn-link">
+                                            Cancelar
+                                        </button>
+                                        <span id="mensajeNuevoDiagnostico" class="small"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Establecimiento" class="form-label"></label>
+                            <input asp-for="Establecimiento" class="form-control"
+                                   data-autocompletar="@Url.Action("SugerirEstablecimientos", "Atenciones")"
+                                   autocomplete="off" />
+                            <span asp-validation-for="Establecimiento" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Observaciones" class="form-label"></label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Medicamentos entregados</span>
+                    <button type="button" id="agregarLinea" class="btn btn-sm btn-outline-principal">
+                        Agregar medicamento
+                    </button>
+                </div>
+                <div class="card-body">
+                    @* El catálogo se comparte con site.js para consultar el stock
+                       una sola vez y decidir el valor inicial de cada casilla. *@
+                    <div id="lineasMedicamentos"
+                         data-catalogo="@Url.Action("ObtenerCatalogoMedicamentos", "Atenciones")">
+                        @{
+                            var lineas = Model.Lineas.Count > 0
+                                ? Model.Lineas
+                                : new List<LineaMedicamentoViewModel> { new() };
+                        }
+                        @for (var i = 0; i < lineas.Count; i++)
+                        {
+                            <div class="linea-medicamento">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted">
+                                        Medicamento <span data-numero>@(i + 1)</span>
+                                    </span>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger quitar-linea">
+                                        Quitar
+                                    </button>
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-md-5">
+                                        @* site.js renumera name, id y for a la vez para
+                                           conservar el model binding y la asociación accesible. *@
+                                        <div class="d-flex justify-content-between align-items-end mb-1">
+                                            <label class="form-label mb-0" for="Lineas_@(i)__Medicamento">Medicamento</label>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-ver-catalogo" tabindex="-1">Ver catálogo</button>
+                                        </div>
+                                        <input id="Lineas_@(i)__Medicamento"
+                                               name="Lineas[@i].Medicamento"
+                                               value="@lineas[i].Medicamento"
+                                               class="form-control"
+                                               maxlength="120"
+                                               data-campo="medicamento"
+                                               data-autocompletar="@Url.Action("SugerirMedicamentos", "Atenciones")"
+                                               autocomplete="off" />
+                                    </div>
+
+                                    @* Se usa texto con formato invariante para aceptar coma o
+                                       punto sin perder el valor al volver de una validación. *@
+                                    <div class="col-md-3">
+                                        <label class="form-label" for="Lineas_@(i)__Cantidad">Cantidad</label>
+                                        <input id="Lineas_@(i)__Cantidad"
+                                               name="Lineas[@i].Cantidad"
+                                               value="@(lineas[i].Cantidad?.ToString("0.##", CultureInfo.InvariantCulture))"
+                                               type="number" step="0.01" min="0.01"
+                                               class="form-control" data-campo="cantidad" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="Lineas_@(i)__MontoManual">Monto donado (Bs)</label>
+                                        <input id="Lineas_@(i)__MontoManual"
+                                               name="Lineas[@i].MontoManual"
+                                               value="@(lineas[i].MontoManual?.ToString("0.00", CultureInfo.InvariantCulture))"
+                                               type="number" step="0.01" min="0"
+                                               class="form-control" data-campo="monto" />
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="Lineas[@i].DescontarDeInventario"
+                                                   value="true"
+                                                   @(lineas[i].DescontarDeInventario ? "checked" : "")
+                                                   data-fifo="@urlSimular"
+                                                   id="Lineas_@(i)__DescontarDeInventario" />
+                                            <input type="hidden"
+                                                   name="Lineas[@i].DescontarDeInventario"
+                                                   value="false" />
+                                            <label class="form-check-label small" for="Lineas_@(i)__DescontarDeInventario">
+                                                Descontar del inventario y calcular el monto
+                                                con el precio de los lotes (FIFO)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+
+     
+
+
+
+
+
+                    @if (!Model.InventarioDisponible)
+                    {
+                        <p class="ayuda-campo mb-0">
+                            Todavía no hay medicamentos cargados en farmacia. Mientras tanto,
+                            escriba el monto de la donación a mano, como se hace hoy.
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">Receta escaneada</div>
+                <div class="card-body">
+                    <p class="ayuda-campo">
+                        Obligatoria. Es el respaldo que reemplaza a la receta en papel que
+                        hay que devolverle al paciente.
+                    </p>
+
+                    <label asp-for="ArchivoReceta" class="form-label obligatorio"></label>
+                    <input asp-for="ArchivoReceta" type="file" class="form-control"
+                           accept="image/jpeg,image/png,image/webp,application/pdf" />
+                    <div class="ayuda-campo mt-1">JPG, PNG, WEBP o PDF, hasta 10 MB.</div>
+                    <span asp-validation-for="ArchivoReceta" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-principal w-100 mb-2">
+                        Registrar entrega
+                    </button>
+                    <a class="btn btn-link w-100"
+                       asp-controller="Pacientes" asp-action="Ficha"
+                       asp-route-id="@Model.IdPaciente">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+<div class="modal fade" id="modalCatalogoMedicamentos" tabindex="-1" aria-hidden="true"
+     aria-labelledby="tituloCatalogoMedicamentos">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloCatalogoMedicamentos">Catálogo de Medicamentos</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label for="filtroCatalogo" class="visually-hidden">Buscar en el catálogo</label>
+                <input type="text" id="filtroCatalogo" class="form-control mb-3" placeholder="Buscar medicamento..." autocomplete="off">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Concentración</th>
+                                <th>Unidad</th>
+                                <th class="text-end">Stock</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCatalogoCuerpo">
+                            <tr><td colspan="5" class="text-center text-muted">Cargando catálogo...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            var enlace = document.getElementById("mostrarNuevoDiagnostico");
+            var caja = document.getElementById("nuevoDiagnostico");
+            var lista = document.getElementById("IdDiagnostico");
+            var texto = document.getElementById("nuevoDiagnosticoTexto");
+            var cie = document.getElementById("nuevoDiagnosticoCie");
+            var guardar = document.getElementById("guardarNuevoDiagnostico");
+            var cancelar = document.getElementById("cancelarNuevoDiagnostico");
+            var mensaje = document.getElementById("mensajeNuevoDiagnostico");
+
+            if (!enlace || !caja || !lista || !texto || !guardar) return;
+
+            var url = '@Url.Action("AgregarDiagnosticoRapido", "Atenciones")';
+
+            // El token antifalsificación del formulario principal sirve para
+            // esta llamada: es el mismo formulario y la misma sesión.
+            var token = document.querySelector(
+                'input[name="__RequestVerificationToken"]');
+
+            function avisar(txt, esError) {
+                mensaje.textContent = txt || "";
+                mensaje.className = "small " + (esError ? "text-danger" : "text-success");
+            }
+
+            enlace.addEventListener("click", function (e) {
+                e.preventDefault();
+                caja.hidden = false;
+                avisar("");
+                texto.focus();
+            });
+
+            cancelar.addEventListener("click", function () {
+                caja.hidden = true;
+                texto.value = "";
+                cie.value = "";
+                avisar("");
+            });
+
+            guardar.addEventListener("click", function () {
+
+                var descripcion = texto.value.trim();
+
+                if (!descripcion) {
+                    avisar("Escriba el diagnóstico.", true);
+                    texto.focus();
+                    return;
+                }
+
+                var datos = new FormData();
+                datos.append("descripcion", descripcion);
+                datos.append("codigoCie10", cie.value.trim());
+                if (token) datos.append("__RequestVerificationToken", token.value);
+
+                guardar.disabled = true;
+
+                fetch(url, { method: "POST", body: datos })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) {
+
+                        guardar.disabled = false;
+
+                        if (!d || !d.ok) {
+                            avisar(
+                                (d && d.mensaje) ||
+                                "No se pudo agregar. Cárguelo desde Administración → Catálogos.",
+                                true);
+                            return;
+                        }
+
+                        var yaEsta = Array.from(lista.options)
+                            .some(function (o) { return o.value === String(d.id); });
+
+                        if (!yaEsta) {
+                            var opcion = document.createElement("option");
+                            opcion.value = d.id;
+                            opcion.textContent = d.texto;
+                            lista.appendChild(opcion);
+                        }
+
+                        lista.value = d.id;
+
+                        avisar(d.mensaje, false);
+                        texto.value = "";
+                        cie.value = "";
+                    })
+                    .catch(function () {
+                        guardar.disabled = false;
+                        avisar(
+                            "No se pudo agregar. Cárguelo desde Administración → Catálogos.",
+                            true);
+                    });
+            });
+        });
+
+        // ── Catálogo de medicamentos ────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", function () {
+            var modalEl = document.getElementById('modalCatalogoMedicamentos');
+            if (!modalEl) return;
+            
+            var modal = new bootstrap.Modal(modalEl);
+            var cuerpoTabla = document.getElementById('tablaCatalogoCuerpo');
+            var filtro = document.getElementById('filtroCatalogo');
+            var inputDestino = null;
+            var catalogoCargado = false;
+            var datosCatalogo = [];
+
+            // Los nombres provienen de usuarias; se crean nodos para no
+            // interpretar su contenido como HTML.
+            function celda(texto, clase) {
+                var td = document.createElement('td');
+                if (clase) td.className = clase;
+                td.textContent = texto;
+                return td;
+            }
+
+            function renderizarTabla(datos) {
+                cuerpoTabla.textContent = '';
+
+                if (datos.length === 0) {
+                    var vacia = document.createElement('tr');
+                    var aviso = celda('No se encontraron medicamentos.', 'text-center text-muted');
+                    aviso.colSpan = 5;
+                    vacia.appendChild(aviso);
+                    cuerpoTabla.appendChild(vacia);
+                    return;
+                }
+
+                datos.forEach(function (m) {
+                    var fila = document.createElement('tr');
+                    fila.appendChild(celda(m.nombre));
+                    fila.appendChild(celda(m.concentracion || '—'));
+                    fila.appendChild(celda(m.unidad || '—'));
+
+                    var tdStock = document.createElement('td');
+                    tdStock.className = 'text-end';
+                    var badge = document.createElement('span');
+                    badge.className = 'badge ' + (m.stock > 0 ? 'bg-success' : 'bg-secondary');
+                    badge.textContent = m.stock;
+                    tdStock.appendChild(badge);
+                    fila.appendChild(tdStock);
+
+                    var tdBoton = document.createElement('td');
+                    tdBoton.className = 'text-center';
+                    var boton = document.createElement('button');
+                    boton.type = 'button';
+                    boton.className = 'btn btn-sm btn-outline-principal';
+                    boton.textContent = 'Seleccionar';
+                    boton.setAttribute('aria-label', 'Seleccionar ' + m.nombre);
+                    boton.addEventListener('click', function () {
+                        if (!inputDestino) return;
+                        // La búsqueda del servidor identifica el medicamento por
+                        // nombre; la concentración se mantiene como dato separado.
+                        inputDestino.value = m.nombre;
+                        // Notifica a la lógica FIFO de la línea.
+                        inputDestino.dispatchEvent(new Event('change', { bubbles: true }));
+                        modal.hide();
+                        inputDestino.focus();
+                    });
+                    tdBoton.appendChild(boton);
+                    fila.appendChild(tdBoton);
+
+                    cuerpoTabla.appendChild(fila);
+                });
+            }
+
+            function cargarCatalogo() {
+                if (catalogoCargado) return;
+
+                // Comparte la petición con las líneas mediante inventarioFarmacia.
+                window.inventarioFarmacia.catalogo()
+                    .then(d => {
+                        datosCatalogo = d;
+                        catalogoCargado = true;
+                        renderizarTabla(datosCatalogo);
+                    })
+                    .catch(() => {
+                        cuerpoTabla.innerHTML = '<tr><td colspan="5" class="text-center text-danger">No se pudo cargar el catálogo. Cierre esta ventana y vuelva a intentar.</td></tr>';
+                    });
+            }
+
+            // Sin distinguir mayúsculas ni tildes, igual que las búsquedas del
+            // servidor («ondansetron» encuentra «Ondansetrón»).
+            function normalizar(texto) {
+                return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            }
+
+            filtro.addEventListener('input', function() {
+                var term = normalizar(this.value.trim());
+                var filtrados = datosCatalogo.filter(function(m) {
+                    return normalizar(m.nombre).includes(term) ||
+                           normalizar(m.concentracion).includes(term);
+                });
+                renderizarTabla(filtrados);
+            });
+
+            // La delegación incluye las líneas agregadas dinámicamente.
+            document.getElementById('lineasMedicamentos').addEventListener('click', function(e) {
+                if (e.target.classList.contains('btn-ver-catalogo')) {
+                    var linea = e.target.closest('.linea-medicamento');
+                    inputDestino = linea.querySelector('input[data-campo="medicamento"]');
+                    filtro.value = '';
+                    if (catalogoCargado) {
+                        renderizarTabla(datosCatalogo);
+                    } else {
+                        cargarCatalogo();
+                    }
+                    modal.show();
+                }
+            });
+
+            modalEl.addEventListener('shown.bs.modal', function () {
+                filtro.focus();
+            });
+        });
+    </script>
+}

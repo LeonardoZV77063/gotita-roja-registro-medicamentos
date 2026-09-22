@@ -1,0 +1,361 @@
+@{
+    ViewData["Title"] = "Catálogos";
+    var condiciones = ViewBag.Condiciones as List<CondicionAtencion> ?? new();
+    var establecimientos = ViewBag.Establecimientos as List<Establecimiento> ?? new();
+    var unidades = ViewBag.Unidades as List<UnidadMedida> ?? new();
+    var tipos = ViewBag.TiposIngreso as List<TipoIngreso> ?? new();
+    var diagnosticos = ViewBag.Diagnosticos as List<Diagnostico> ?? new();
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Catálogos</h1>
+    <p class="text-muted mb-0">
+        Estas listas se administran desde acá. La institución puede agregar lo que
+        necesite sin depender de los desarrolladores.
+    </p>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Condiciones de atención</div>
+            <div class="card-body">
+                <ul class="list-unstyled small mb-3">
+                    @foreach (var c in condiciones)
+                    {
+                        <li class="py-1 border-bottom">
+                            @c.Descripcion
+                            @if (!c.Activo)
+                            {
+                                <span class="badge bg-secondary ms-1">inactiva</span>
+                            }
+                        </li>
+                    }
+                </ul>
+
+                <form asp-action="AgregarCondicion" method="post" class="row g-2">
+                    <div class="col-8">
+                        <input name="descripcion" class="form-control form-control-sm"
+                               aria-label="Nombre de la nueva condición de atención"
+                               placeholder="Nueva condición" required maxlength="40" />
+                    </div>
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-sm btn-outline-principal w-100">
+                            Agregar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Unidades de medida</div>
+            <div class="card-body">
+                <ul class="list-unstyled small mb-3">
+                    @foreach (var u in unidades)
+                    {
+                        <li class="py-1 border-bottom">
+                            @u.Descripcion <span class="text-muted">(@u.Abreviatura)</span>
+                        </li>
+                    }
+                </ul>
+
+                <form asp-action="AgregarUnidad" method="post" class="row g-2">
+                    <div class="col-6">
+                        <input name="descripcion" class="form-control form-control-sm"
+                               aria-label="Nombre de la nueva unidad de medida"
+                               placeholder="Nueva unidad" required maxlength="40" />
+                    </div>
+                    <div class="col-3">
+                        <input name="abreviatura" class="form-control form-control-sm"
+                               aria-label="Abreviatura de la nueva unidad de medida"
+                               placeholder="Abrev." required maxlength="10" />
+                    </div>
+                    <div class="col-3">
+                        <button type="submit" class="btn btn-sm btn-outline-principal w-100">
+                            Agregar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                Hospitales y establecimientos
+                <span class="text-muted fw-normal small">— se crean solos al escribirlos</span>
+            </div>
+            <div class="card-body">
+                @if (establecimientos.Count == 0)
+                {
+                    <p class="text-muted small mb-0">
+                        Todavía no se registró ninguno. Aparecerán a medida que se
+                        escriban en el formulario de entrega.
+                    </p>
+                }
+                else
+                {
+                    <table class="table table-sm tabla-compacta mb-0">
+                        <tbody>
+                        @foreach (var e in establecimientos)
+                        {
+                            <tr>
+                                <td>
+                                    @e.Nombre
+                                    @if (!e.Activo)
+                                    {
+                                        <span class="badge bg-secondary ms-1">inactivo</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <form asp-action="AlternarEstablecimiento"
+                                          asp-route-id="@e.IdEstablecimiento" method="post">
+                                        <button type="submit" class="btn btn-sm btn-link p-0">
+                                            @(e.Activo ? "Desactivar" : "Activar")
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Tipos de ingreso al inventario</div>
+            <div class="card-body">
+                <ul class="list-unstyled small mb-0">
+                    @foreach (var t in tipos)
+                    {
+                        <li class="py-1 border-bottom">@t.Descripcion</li>
+                    }
+                </ul>
+                <p class="ayuda-campo mt-3 mb-0">
+                    Definen de dónde vino cada lote. Como el costeo depende de esto,
+                    conviene mantener la lista corta y estable.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+
+        <div class="card h-100">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Diagnósticos</span>
+
+                <span class="badge bg-secondary">
+                    @diagnosticos.Count
+                </span>
+            </div>
+
+            <div class="card-body">
+
+                @if (diagnosticos.Count == 0)
+                {
+                    <p class="text-muted small">
+                        Todavía no hay diagnósticos registrados.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive mb-3">
+
+                        <table class="table table-sm tabla-compacta align-middle">
+
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">CIE-10</th>
+                                    <th>Diagnóstico</th>
+                                    <th style="width: 90px;">Estado</th>
+                                    <th style="width: 180px;"></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var d in diagnosticos)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @(string.IsNullOrWhiteSpace(d.CodigoCie10)
+                                                ? "—"
+                                                : d.CodigoCie10)
+                                        </td>
+
+                                        <td>
+                                            @d.Descripcion
+                                        </td>
+
+                                        <td>
+                                            @if (d.Activo)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Activo
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    Inactivo
+                                                </span>
+                                            }
+                                        </td>
+
+                                        <td class="text-end">
+
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#editarDiagnostico_@d.IdDiagnostico">
+                                                Editar
+                                            </button>
+
+                                            <form asp-action="CambiarEstadoDiagnostico"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                <input type="hidden"
+                                                       name="idDiagnostico"
+                                                       value="@d.IdDiagnostico" />
+
+                                                <button type="submit"
+                                                        class="btn btn-sm @(d.Activo
+                                                                                                            ? "btn-outline-danger"
+                                                                                                            : "btn-outline-success")">
+
+                                                    @(d.Activo
+                                                        ? "Desactivar"
+                                                        : "Activar")
+
+                                                </button>
+
+                                            </form>
+
+                                        </td>
+
+                                    </tr>
+
+
+                                    <tr class="collapse"
+                                        id="editarDiagnostico_@d.IdDiagnostico">
+
+                                        <td colspan="4">
+
+                                            <form asp-action="EditarDiagnostico"
+                                                  method="post"
+                                                  class="row g-2">
+
+                                                <input type="hidden"
+                                                       name="idDiagnostico"
+                                                       value="@d.IdDiagnostico" />
+
+                                                <div class="col-md-3">
+
+                                                    <label class="form-label small" for="cie10_@d.IdDiagnostico">
+                                                        Código CIE-10
+                                                    </label>
+
+                                                    <input name="codigoCie10" id="cie10_@d.IdDiagnostico"
+                                                           value="@d.CodigoCie10"
+                                                           class="form-control form-control-sm"
+                                                           maxlength="10" />
+
+                                                </div>
+
+                                                <div class="col-md-7">
+
+                                                    <label class="form-label small" for="diagnostico_@d.IdDiagnostico">
+                                                        Diagnóstico
+                                                    </label>
+
+                                                    <input name="descripcion" id="diagnostico_@d.IdDiagnostico"
+                                                           value="@d.Descripcion"
+                                                           class="form-control form-control-sm"
+                                                           maxlength="160"
+                                                           required />
+
+                                                </div>
+
+                                                <div class="col-md-2 d-flex align-items-end">
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-principal w-100">
+                                                        Guardar
+                                                    </button>
+
+                                                </div>
+
+                                            </form>
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+
+                <hr />
+
+
+                <div class="small fw-semibold mb-2">
+                    Agregar diagnóstico
+                </div>
+
+                <form asp-action="AgregarDiagnostico"
+                      method="post"
+                      class="row g-2">
+
+                    <div class="col-md-3">
+
+                        <input name="codigoCie10"
+                               class="form-control form-control-sm"
+                               aria-label="Código CIE-10 del nuevo diagnóstico (opcional)"
+                               placeholder="CIE-10"
+                               maxlength="10" />
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <input name="descripcion"
+                               class="form-control form-control-sm"
+                               aria-label="Nombre del nuevo diagnóstico"
+                               placeholder="Nuevo diagnóstico"
+                               maxlength="160"
+                               required />
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-principal w-100">
+                            Agregar
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,44 @@
+## Compilación
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Visual Studio
+.vs/
+*.vsp
+*.vspx
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## Documentación local para agentes
+/docs/
+/CODEX.md
+
+## Archivos escaneados: son documentos médicos, nunca al repositorio
+Almacen/
+SistemaDonaciones.Web/Almacen/
+
+## Configuración con datos sensibles
+appsettings.Production.json
+appsettings.*.Local.json
+secrets.json
+# Cadena de conexión con usuario y contraseña. Ignorarla no la saca del
+# historial: si ya fue versionada hay que quitarla del índice
+# (git rm --cached) y cambiar la contraseña en el servidor.
+cadena de conexión.txt
+
+## Paquetes descargados a mano
+nupkgs/
+*.nupkg
+
+## Varios
+*.log
+Thumbs.db
+.DS_Store

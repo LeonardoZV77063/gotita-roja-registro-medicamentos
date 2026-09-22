@@ -1,0 +1,69 @@
+@model UsuarioFormViewModel
+@{
+    ViewData["Title"] = Model.EsNuevo ? "Nuevo usuario" : "Editar usuario";
+    var roles = ViewBag.Roles as List<Rol> ?? new List<Rol>();
+}
+
+<div class="card" style="max-width: 36rem;">
+    <h1 class="card-header h5 mb-0">@ViewData["Title"]</h1>
+    <div class="card-body">
+        <form asp-action="UsuarioForm" method="post">
+            <input type="hidden" asp-for="IdUsuario" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            <div class="mb-3">
+                <label asp-for="NombreUsuario" class="form-label obligatorio"></label>
+                <input asp-for="NombreUsuario" class="form-control" data-foco-inicial />
+                <span asp-validation-for="NombreUsuario" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NombreCompleto" class="form-label obligatorio"></label>
+                <input asp-for="NombreCompleto" class="form-control" />
+                <span asp-validation-for="NombreCompleto" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdRol" class="form-label obligatorio"></label>
+                <select asp-for="IdRol" class="form-select">
+                    <option value="">— Seleccione —</option>
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r.IdRol">@r.Nombre</option>
+                    }
+                </select>
+                <span asp-validation-for="IdRol" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Contrasena" class="form-label @(Model.EsNuevo ? "obligatorio" : "")"></label>
+                <input asp-for="Contrasena" class="form-control" autocomplete="new-password" />
+                <div class="ayuda-campo">
+                    @(Model.EsNuevo
+                        ? "Mínimo 8 caracteres. El usuario debería cambiarla al ingresar."
+                        : "Déjelo vacío para conservar la contraseña actual.")
+                </div>
+                <span asp-validation-for="Contrasena" class="text-danger small"></span>
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="Activo" class="form-check-input" />
+                <label asp-for="Activo" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-principal">Guardar</button>
+            <a class="btn btn-link" asp-action="Usuarios">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,105 @@
+@model ExportacionViewModel
+@{
+    ViewData["Title"] = "Respaldos exportados";
+    var desdeIso = Model.Desde.ToString("yyyy-MM-dd");
+    var hastaIso = Model.Hasta.ToString("yyyy-MM-dd");
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Respaldos exportados</h1>
+    <p class="text-muted mb-0">
+        Deje constancia de cada copia de la información que salga de la
+        institución: qué período abarcaba, cuándo se generó y quién la hizo.
+    </p>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">Registrar una exportación</div>
+            <div class="card-body">
+                <form asp-action="Respaldos" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Desde" class="form-label obligatorio"></label>
+                        <input asp-for="Desde" type="date" class="form-control" />
+                        <span asp-validation-for="Desde" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Hasta" class="form-label obligatorio"></label>
+                        <input asp-for="Hasta" type="date" class="form-control" />
+                        <span asp-validation-for="Hasta" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Destino" class="form-label obligatorio"></label>
+                        <input asp-for="Destino" class="form-control" maxlength="120"
+                               placeholder="Ej.: sede central, auditoría interna…" />
+                        <span asp-validation-for="Destino" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Observaciones" class="form-label"></label>
+                        <textarea asp-for="Observaciones" class="form-control" rows="2" maxlength="300"></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-principal">Registrar</button>
+                    @* site.js actualiza el enlace con el período actual del formulario. *@
+                    <a class="btn btn-outline-principal"
+                       asp-action="ExportarCsv"
+                       asp-route-desde="@desdeIso"
+                       asp-route-hasta="@hastaIso"
+                       data-periodo-desde="#Desde" data-periodo-hasta="#Hasta">
+                        Descargar CSV
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">Historial</div>
+            <div class="table-responsive">
+                <table class="table tabla-compacta mb-0">
+                    <thead>
+                    <tr>
+                        <th>Generado</th>
+                        <th>Período</th>
+                        <th class="numero">Atenciones</th>
+                        <th>Destino</th>
+                        <th>Usuario</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var e in Model.Historial)
+                    {
+                        <tr>
+                            <td>@e.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="small">
+                                @e.PeriodoDesde.ToString("dd/MM/yy") –
+                                @e.PeriodoHasta.ToString("dd/MM/yy")
+                            </td>
+                            <td class="numero">@e.CantidadAtenciones</td>
+                            <td class="small">@(e.Destino ?? "—")</td>
+                            <td class="small">@e.Usuario?.NombreCompleto</td>
+                        </tr>
+                    }
+                    @if (Model.Historial.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                Todavía no se registró ninguna exportación.
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

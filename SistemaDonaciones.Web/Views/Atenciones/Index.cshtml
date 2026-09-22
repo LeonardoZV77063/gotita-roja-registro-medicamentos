@@ -1,0 +1,138 @@
+@model ListadoAtencionesViewModel
+@{
+    ViewData["Title"] = "Entregas";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">Entregas registradas</h1>
+        <p class="text-muted mb-0">
+            @Model.TotalRegistros registro(s) ·
+            @Model.MontoTotal.ToString("N2") Bs en esta página
+        </p>
+    </div>
+    <a class="btn btn-principal" asp-controller="Pacientes" asp-action="Index">
+        Atender a un paciente
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="alert alert-danger py-2 small"></div>
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label asp-for="Desde" class="form-label"></label>
+                <input asp-for="Desde" type="date" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Hasta" class="form-label"></label>
+                <input asp-for="Hasta" type="date" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Criterio" class="form-label"></label>
+                <input asp-for="Criterio" class="form-control" maxlength="80" autocomplete="off" />
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mb-2">
+                    <input asp-for="IncluirAnuladas" class="form-check-input" />
+                    <label asp-for="IncluirAnuladas" class="form-check-label small"></label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-principal w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Formulario</th>
+                <th>Paciente</th>
+                <th>Diagnóstico</th>
+                <th>Condición</th>
+                <th>Medicamentos</th>
+                <th class="numero">Monto</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Atenciones.Count == 0)
+            {
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <text>Corrija el filtro indicado arriba para ver las entregas.</text>
+                        }
+                        else if (Model.CriterioInvalido)
+                        {
+                            <text>La búsqueda no contiene letras ni números que se puedan buscar.</text>
+                        }
+                        else
+                        {
+                            <text>No hay entregas que coincidan con el filtro.</text>
+                        }
+                    </td>
+                </tr>
+            }
+            @foreach (var a in Model.Atenciones)
+            {
+                <tr class="@(a.EstaAnulada ? "fila-anulada" : "")">
+                    <td>@a.FechaAtencion.ToString("dd/MM/yy")</td>
+                    <td>
+                        <a asp-action="Detalle" asp-route-id="@a.IdAtencion">
+                            @a.NumeroFormulario
+                        </a>
+                        @* La insignia comunica el estado sin depender sólo del
+                           tachado, la opacidad o el color. *@
+                        @if (a.EstaAnulada)
+                        {
+                            <span class="badge bg-danger ms-1">Anulada</span>
+                        }
+                    </td>
+                    <td>@a.Paciente?.NombreCompleto</td>
+                    <td class="small">@a.Diagnostico?.Descripcion</td>
+                    <td class="small">@a.Condicion?.Descripcion</td>
+                    <td class="small">
+                        @string.Join(", ", a.Detalles.Select(d => d.Medicamento?.Nombre))
+                    </td>
+                    <td class="numero">@a.MontoTotal.ToString("N2")</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           asp-action="Comprobante" asp-route-id="@a.IdAtencion" target="_blank">
+                            Imprimir
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.TotalPaginas > 1)
+{
+    var desdeIso = Model.Desde?.ToString("yyyy-MM-dd");
+    var hastaIso = Model.Hasta?.ToString("yyyy-MM-dd");
+
+    <nav class="mt-3">
+        <ul class="pagination pagination-sm justify-content-center">
+            @for (var i = 1; i <= Model.TotalPaginas; i++)
+            {
+                <li class="page-item @(i == Model.Pagina ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-desde="@desdeIso"
+                       asp-route-hasta="@hastaIso"
+                       asp-route-criterio="@Model.Criterio"
+                       asp-route-incluirAnuladas="@Model.IncluirAnuladas"
+                       asp-route-pagina="@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

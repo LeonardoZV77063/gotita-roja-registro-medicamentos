@@ -1,0 +1,36 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Algo salió mal";
+}
+
+@* No exponer trazas ni detalles internos; el identificador permite correlacionar
+   la pantalla con el registro del servidor. *@
+
+<div class="card mx-auto my-4" style="max-width: 40rem;">
+    <div class="card-body">
+        <h1 class="h4 mb-3">No se pudo completar la operación</h1>
+
+        <p>
+            Ocurrió un error inesperado y los cambios de esta operación no se
+            guardaron. Puede volver atrás e intentarlo de nuevo.
+        </p>
+
+        <p class="mb-0">
+            Si el problema se repite, avise al responsable del sistema indicando
+            qué estaba haciendo
+            @if (Model.ShowRequestId)
+            {
+                <text>y este código de referencia: <code class="user-select-all">@Model.RequestId</code></text>
+            }
+            else
+            {
+                <text>y la hora aproximada.</text>
+            }
+        </p>
+
+        <div class="mt-4 d-flex flex-wrap gap-2">
+            <a class="btn btn-principal" asp-controller="Home" asp-action="Index">Ir al inicio</a>
+            <button type="button" class="btn btn-link" onclick="history.back()">Volver a la página anterior</button>
+        </div>
+    </div>
+</div>

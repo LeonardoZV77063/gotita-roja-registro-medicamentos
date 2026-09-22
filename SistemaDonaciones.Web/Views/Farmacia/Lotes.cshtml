@@ -1,0 +1,168 @@
+@model LotesMedicamentoViewModel
+@{
+    ViewData["Title"] = Model.Medicamento.Nombre;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">@Model.Medicamento.NombreCompleto</h1>
+        <p class="text-muted mb-0">
+            @Model.TotalDisponible.ToString("0.##") unidades disponibles ·
+            @Model.ValorTotal.ToString("N2") Bs
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary"
+           asp-action="Kardex" asp-route-idMedicamento="@Model.Medicamento.IdMedicamento">
+            Ver kardex
+        </a>
+        <a class="btn btn-principal" asp-action="Ingresar">Registrar ingreso</a>
+    </div>
+</div>
+
+@* Los anulados no integran los totales, pero se informan para conciliar el historial. *@
+@if (Model.LotesAnulados > 0)
+{
+    <div class="alert alert-secondary">
+        @Model.LotesAnulados de estos ingresos
+        @(Model.LotesAnulados == 1 ? "está anulado" : "están anulados")
+        y no cuentan para el stock ni para la valuación. Siguen en la lista
+        porque las entregas que salieron de ellos conservan su costo.
+    </div>
+}
+
+@if (Model.CostoMinimo.HasValue && Model.CostoMaximo > Model.CostoMinimo)
+{
+    <div class="alert alert-info">
+        <strong>Los precios de este medicamento varían entre
+            @Model.CostoMinimo.Value.ToString("N2") y
+            @Model.CostoMaximo.Value.ToString("N2") Bs.</strong>
+        Por eso el sistema no promedia: la próxima entrega se valuará a
+        @Model.ProximoCosto?.ToString("N2") Bs por unidad, que es el precio del
+        lote más antiguo que queda.
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        Lotes, del más antiguo al más nuevo (orden de consumo)
+    </div>
+    <div class="table-responsive">
+        <table class="table tabla-compacta mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Ingreso</th>
+                <th>Tipo</th>
+                <th>N° lote</th>
+                <th>Origen</th>
+                <th class="numero">Ingresado</th>
+                <th class="numero">Disponible</th>
+                <th class="numero">Costo unit.</th>
+                <th class="numero">Valor</th>
+                <th>Vence</th>
+                @if (User.EsAdministrador())
+                {
+                    <th><span class="visually-hidden">Corregir</span></th>
+                }
+            </tr>
+            </thead>
+            <tbody>
+            @{
+                var orden = 0;
+            }
+            @foreach (var l in Model.Lotes)
+            {
+                // Un lote futuro no participa del FIFO hasta su fecha de ingreso.
+                var futuro = l.FechaIngreso.Date > DateTime.Today;
+                var activo = l.CantidadDisponible > 0 && !futuro && !l.Anulado;
+                if (activo) { orden++; }
+
+                <tr class="@(activo ? "" : "text-muted")">
+                    <td>@(activo ? orden.ToString() : "—")</td>
+                    <td>
+                        @l.FechaIngreso.ToString("dd/MM/yyyy")
+                        @if (futuro)
+                        {
+                            <span class="badge bg-warning text-dark ms-1"
+                                  title="No se descuenta en entregas anteriores a esta fecha">fecha futura</span>
+                        }
+                        @if (l.Anulado)
+                        {
+                            <span class="badge bg-danger ms-1"
+                                  title="@l.MotivoAnulacion">anulado</span>
+                        }
+                    </td>
+                    <td>@l.TipoIngreso?.Descripcion</td>
+                    <td>@(l.NumeroLote ?? "—")</td>
+                    <td class="small">@(l.Origen ?? "—")</td>
+                    <td class="numero">@l.CantidadIngresada.ToString("0.##")</td>
+                    @* Los anulados conservan el registro histórico, pero no saldo valorizado. *@
+                    <td class="numero fw-semibold">
+                        @(l.Anulado ? "—" : l.CantidadDisponible.ToString("0.##"))
+                    </td>
+                    <td class="numero">@l.CostoUnitario.ToString("N2")</td>
+                    <td class="numero">@(l.Anulado ? "—" : l.ValorDisponible.ToString("N2"))</td>
+                    <td class="@(l.Vencido ? "text-danger" : l.PorVencer() ? "text-warning" : "")">
+                        @(l.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "—")
+                    </td>
+                    @if (User.EsAdministrador())
+                    {
+                        <td class="text-nowrap">
+                            @if (l.Anulado)
+                            {
+                                <span class="small text-muted">Anulado</span>
+                            }
+                            else
+                            {
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   asp-action="Editar" asp-route-id="@l.IdLote">Corregir</a>
+                                <a class="btn btn-sm btn-outline-danger"
+                                   asp-action="Anular" asp-route-id="@l.IdLote">Anular</a>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+            @if (Model.Lotes.Count == 0)
+            {
+                <tr>
+                    <td colspan="@(User.EsAdministrador() ? 11 : 10)" class="text-center text-muted py-4">
+                        Este medicamento todavía no tiene ingresos registrados.
+                    </td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr class="fw-semibold">
+                <td colspan="6" class="text-end">Total disponible</td>
+                <td class="numero">@Model.TotalDisponible.ToString("0.##")</td>
+                <td></td>
+                <td class="numero">@Model.ValorTotal.ToString("N2")</td>
+                <td></td>
+                @if (User.EsAdministrador())
+                {
+                    <td></td>
+                }
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3" style="max-width: 30rem;">
+    <div class="card-header">Simular una entrega</div>
+    <div class="card-body">
+        <form asp-action="Simular" method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="id" value="@Model.Medicamento.IdMedicamento" />
+            <div class="col-8">
+                <label class="form-label" for="cantidadSimulacion">Cantidad a entregar</label>
+                <input id="cantidadSimulacion" name="cantidad" type="number" step="0.01" min="0.01"
+                       class="form-control" required />
+            </div>
+            <div class="col-4">
+                <button type="submit" class="btn btn-outline-principal w-100">Calcular</button>
+            </div>
+        </form>
+    </div>
+</div>

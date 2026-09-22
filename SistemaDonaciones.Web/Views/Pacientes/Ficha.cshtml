@@ -1,0 +1,284 @@
+@model FichaPacienteViewModel
+@{
+    ViewData["Title"] = Model.Paciente.NombreCompleto;
+    var p = Model.Paciente;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+    <div>
+        <h1 class="h3 mb-1">@p.NombreCompleto</h1>
+        <p class="text-muted mb-0">
+            Carnet @p.DocumentoCompleto@(string.IsNullOrWhiteSpace(p.ExtensionDoc)
+                ? "" : " " + p.ExtensionDoc) ·
+            @p.Edad años · @p.Sexo?.Descripcion
+            @if (!string.IsNullOrWhiteSpace(p.Telefono))
+            {
+                <text> · Tel. @p.Telefono</text>
+            }
+            @if (!string.IsNullOrWhiteSpace(p.ProcedenciaCorta))
+            {
+                <text> · @p.ProcedenciaCorta</text>
+            }
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        @* El controlador también exige Administrador; ocultar la acción evita
+           una navegación que terminaría en «Sin permiso». *@
+        @if (User.EsAdministrador())
+        {
+            <a class="btn btn-outline-principal" asp-action="Editar" asp-route-id="@p.IdPaciente">
+                Editar datos
+            </a>
+        }
+        <a class="btn btn-principal"
+           asp-controller="Atenciones" asp-action="Crear" asp-route-idPaciente="@p.IdPaciente">
+            Nueva entrega
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Entregas</div>
+            <div class="cifra">@Model.TotalAtenciones</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Total donado</div>
+            <div class="cifra">@Model.MontoTotalDonado.ToString("N0") <small class="fs-6">Bs</small></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Última entrega</div>
+            <div class="cifra fs-4">
+                @(Model.UltimaAtencion?.ToString("dd/MM/yyyy") ?? "—")
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="panel-dato">
+            <div class="etiqueta">Registrado el</div>
+            <div class="cifra fs-4">@p.FechaRegistro.ToString("dd/MM/yyyy")</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">Carnet de identidad</div>
+            <div class="card-body">
+                @if (Model.CarnetVigente is null)
+                {
+                    <p class="text-muted small">
+                        Este paciente todavía no tiene el carnet cargado.
+                    </p>
+                }
+                else if (Model.CarnetVigente.EsPdf)
+                {
+                    <a class="btn btn-outline-principal btn-sm mb-2"
+                       asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.CarnetVigente.IdArchivo" target="_blank">
+                        Abrir carnet (PDF)
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Archivos" asp-action="Ver"
+                       asp-route-id="@Model.CarnetVigente.IdArchivo" target="_blank">
+                        <img class="miniatura-documento mb-2"
+                             src="@Url.Action("Ver", "Archivos", new { id = Model.CarnetVigente.IdArchivo })"
+                             alt="Carnet de @p.NombreCompleto" />
+                    </a>
+                }
+
+                <form asp-action="ActualizarCarnet" asp-route-id="@p.IdPaciente"
+                      method="post" enctype="multipart/form-data" class="mt-2">
+                    <label class="form-label small" for="archivoCarnetRenovado">Cargar carnet renovado</label>
+                    <input type="file" id="archivoCarnetRenovado" name="archivoCarnet"
+                           class="form-control form-control-sm mb-2"
+                           accept="image/jpeg,image/png,image/webp,application/pdf" required />
+                    <button type="submit" class="btn btn-sm btn-outline-principal">
+                        Actualizar carnet
+                    </button>
+                </form>
+
+                @if (Model.CarnetsAnteriores.Count > 0)
+                {
+                    <hr />
+                    <div class="small text-muted mb-1">Carnets anteriores</div>
+                    <ul class="list-unstyled small mb-0">
+                        @foreach (var doc in Model.CarnetsAnteriores)
+                        {
+                            <li>
+                                <a asp-controller="Archivos" asp-action="Ver"
+                                   asp-route-id="@doc.IdArchivo" target="_blank">
+                                    Registrado el @doc.FechaRegistro.ToString("dd/MM/yyyy")
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        @* El origen identifica la procedencia; la residencia describe dónde
+           vive actualmente el paciente. *@
+        <div class="card mb-3">
+            <div class="card-header">Ubicación</div>
+            <div class="card-body small">
+
+                @* El identificador confirma que existe origen aunque una consulta
+                   no haya cargado su descripción. *@
+                <div class="text-muted">Es de</div>
+                @if (p.OrigenCompleto is not null)
+                {
+                    <div>
+                        @p.OrigenCompleto
+                        @if (p.EsDelExterior)
+                        {
+                            <span class="badge bg-secondary ms-1"
+                                  title="El mapa es de Bolivia: estas atenciones se cuentan aparte">exterior</span>
+                        }
+                    </div>
+                }
+
+                @* Un país local sin municipio sigue incompleto; los reportes
+                   recurren a la residencia para esos registros. *@
+                @if (!p.EsDelExterior && p.IdMunicipioOrigen is null)
+                {
+                    <div class="mb-3 text-muted fst-italic">
+                        @(p.OrigenCompleto is null ? "Sin cargar." : "Falta el municipio.")
+                        @if (p.OrigenSupuesto)
+                        {
+                            <text>El mapa lo cuenta por donde vive.</text>
+                        }
+                        @if (User.EsAdministrador())
+                        {
+                            <text>Puede completarlo desde <em>Editar datos</em>.</text>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3"></div>
+                }
+
+                <div class="text-muted">Vive en</div>
+                @if (string.IsNullOrWhiteSpace(p.ResidenciaCompleta)
+                     && string.IsNullOrWhiteSpace(p.DireccionCompleta))
+                {
+                    <div class="text-muted fst-italic mb-0">
+                        Sin cargar.
+                        @if (User.EsAdministrador())
+                        {
+                            <text>Puede completarlo desde <em>Editar datos</em>.</text>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrWhiteSpace(p.ResidenciaCompleta))
+                    {
+                        <div>@p.ResidenciaCompleta</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.DireccionCompleta))
+                    {
+                        <div class="text-muted">@p.DireccionCompleta</div>
+                    }
+                    @* DireccionCompleta ya incorpora la referencia cuando no hay
+                       campos estructurados. *@
+                    @if (!string.IsNullOrWhiteSpace(p.Direccion)
+                         && p.DireccionCompleta != p.Direccion)
+                    {
+                        <div class="text-muted fst-italic">@p.Direccion</div>
+                    }
+                }
+
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(p.Observaciones))
+        {
+            <div class="card">
+                <div class="card-header">Observaciones</div>
+                <div class="card-body small">@p.Observaciones</div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">Historial de entregas</div>
+            <div class="card-body p-0">
+                @if (Model.Atenciones.Count == 0)
+                {
+                    <p class="text-muted p-4 mb-0">
+                        Este paciente todavía no tiene entregas registradas.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table tabla-compacta mb-0 align-middle">
+                            <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Formulario</th>
+                                <th>Diagnóstico</th>
+                                <th>Condición</th>
+                                <th>Medicamentos</th>
+                                <th class="numero">Monto</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var a in Model.Atenciones)
+                            {
+                                <tr class="@(a.EstaAnulada ? "fila-anulada" : "")">
+                                    <td>@a.FechaAtencion.ToString("dd/MM/yy")</td>
+                                    <td>
+                                        <a asp-controller="Atenciones" asp-action="Detalle"
+                                           asp-route-id="@a.IdAtencion">@a.NumeroFormulario</a>
+                                        @if (a.EstaAnulada)
+                                        {
+                                            <span class="badge bg-danger ms-1">Anulada</span>
+                                        }
+                                    </td>
+                                    <td class="small">@a.Diagnostico?.Descripcion</td>
+                                    <td class="small">@a.Condicion?.Descripcion</td>
+                                    <td class="small">
+                                        @foreach (var d in a.Detalles)
+                                        {
+                                            <div>
+                                                @d.Medicamento?.Nombre
+                                                <span class="text-muted">
+                                                    (@d.Cantidad.ToString("0.##"))
+                                                </span>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="numero">@a.MontoTotal.ToString("N2")</td>
+                                    <td class="text-end">
+                                        @if (a.ArchivoReceta is not null)
+                                        {
+                                            <a class="btn btn-sm btn-outline-secondary"
+                                               asp-controller="Archivos" asp-action="Ver"
+                                               asp-route-id="@a.IdArchivoReceta" target="_blank">
+                                                Receta
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
